@@ -1,3 +1,6 @@
+#ifndef COLOR_H
+#define COLOR_H
+
 typedef struct color
 {
   unsigned char r, g, b;
@@ -13,3 +16,4 @@ typedef struct configvars
   int minzoom;
 } configvars_t;
 
+#endif
