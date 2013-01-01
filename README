@@ -1,0 +1,11 @@
+Dependencies:
+gcc, zlib, gtk (, cNBT included in preoject (src/NBT/*))
+
+The currently supportded platforms are: linux and windows (mac is barely supported)
+
+Contact me on Github if you're an experienced Mac c++/c developer and can fix the Mac port.
+
+build with:
+# make <platform>
+
+The binaries are located in "bin/<platform>/".
