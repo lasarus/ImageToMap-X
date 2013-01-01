@@ -3,7 +3,7 @@ gcc, zlib, gtk (, cNBT included in preoject (src/NBT/*))
 
 The currently supportded platforms are: linux and windows (mac is barely supported)
 
-Contact me on Github if you're an experienced Mac c++/c developer and can fix the Mac port.
+Contact me (llasarus@gmail.com) if you're an experienced Mac c++/c developer and can fix the Mac port.
 
 If you're compiling this on anything but Linux you'll probably need to make your own build system, and if you have I would be very happy if you could send it and instructions on how to use it to me.
 
