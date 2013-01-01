@@ -1,3 +1,19 @@
+/* This file is part of ImageToMapX.
+   ImageToMapX is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   any later version.
+ 
+   ImageToMapX is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+   You should have received a copy of the GNU General Public License
+   along with ImageToMapX. If not, see <http://www.gnu.org/licenses/>. */
+
+/* This file is a little bit messy, and should be changed into a more dynamic
+   way of saving maps as soon as possible */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -74,15 +90,6 @@ void nbt_save_map(const char * filename,
   memcpy(buffer, databuffer, DATALEN);
   memcpy(buffer + DATALEN, mapdata, 0x4000);
   memcpy(buffer + DATALEN + 0x4000, ensedatabuffer, ENDDATALEN);
-	
-  /*int i;
-    for(i = 0; i < 0x38; i++)
-    {
-    if(buffer[i] < 32 || buffer[i] == 127)
-    printf(".");
-    else
-    printf("%c", buffer[i]);
-    }*/
 	
   FILE * dest = fopen(filename, "wb");
   deflatenbt(buffer, MAPLEN, dest, 9);
@@ -192,14 +199,6 @@ void load_colors(color_t * colors, char * filename)
     memcpy(colors, tbuffer, 56 * sizeof(color_t));
   free(tbuffer);
   fclose(source);
-	
-  /*FILE * source = fopen(filename, "rb");
-    int i = 0;
-    for(i = 0; i < 56; i++)
-    {
-    fread(&(colors[i]), sizeof(color_t), 1, source);
-    }
-    fclose(source);*/
 }
 
 
