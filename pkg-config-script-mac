@@ -1,0 +1,4 @@
+#! /bin/sh
+
+PKG_CONFIG_LIBDIR=/usr/i686-apple-darwin10/lib/pkgconfig \
+PKG_CONFIG_PATH=/usr/i686-apple-darwin10/lib/pkgconfig pkg-config $*

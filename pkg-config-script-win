@@ -1,0 +1,4 @@
+#! /bin/sh
+
+PKG_CONFIG_LIBDIR=/usr/i486-mingw32/lib/pkgconfig \
+PKG_CONFIG_PATH=/usr/i486-mingw32/lib/pkgconfig pkg-config $*
