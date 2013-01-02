@@ -18,9 +18,10 @@ all: $(TARGET)
 	mkdir -p $(APP){MacOS,Resources}
 	cp mac/ImageToMapX $(APP)MacOS/ImageToMapX
 	cp $(TARGET) $(APP)MacOS/ImageToMapX-bin
-	cp /usr/i686-apple-darwin10/lib/*.dylib $(APP)MacOS/
+	cp mac/dylib/* $(APP)MacOS/
 	cp -r resources/* $(APP)MacOS/
 	cp mac/Info.plist mac/PkgInfo $(APP)
+	cp mac/ImageToMapX.icns $(APP)Resources/
 	chmod -R 755 $(APP)
 
 $(OBJ)%.o: %.c
