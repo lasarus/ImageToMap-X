@@ -9,7 +9,7 @@
     <key>CFBundleGetInfoString</key>
     <string>1.0</string>
     <key>CFBundleIconFile</key>
-    <string>ImageToMapX.icns</string>
+    <string>ImageToMapX</string>
     <key>CFBundleIdentifier</key>
     <string>me.lasarus.imagetomapx</string>
     <key>CFBundleInfoDictionaryVersion</key>
