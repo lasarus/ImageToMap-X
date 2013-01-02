@@ -16,9 +16,10 @@ OBJECTS = $(patsubst %.c, $(OBJ)%.o, $(SOURCES))
 
 all: $(TARGET)
 	mkdir -p $(APP){MacOS,Resources}
-	cp $(TARGET) $(APP)MacOS/ImageToMap
+	cp mac/ImageToMapX $(APP)MacOS/ImageToMapX
+	cp $(TARGET) $(APP)MacOS/ImageToMapX-bin
 	cp /usr/i686-apple-darwin10/lib/*.dylib $(APP)MacOS/
-	cp -r resources/* $(APP)Resources/
+	cp -r resources/* $(APP)MacOS/
 	cp mac/Info.plist mac/PkgInfo $(APP)
 	chmod -R 755 $(APP)
 
