@@ -5,7 +5,7 @@ LFLAGS := `pkg-config --libs gtk+-3.0` -lm -lz
 OBJ := obj/linux/
 BIN := bin/linux/
 
-TARGET := $(BIN)ImageToMap
+TARGET := $(BIN)ImageToMapX
 
 SRCDIRS := src src/* src/*/* src/*/*/*
 SOURCES := $(foreach DIR, $(SRCDIRS), $(wildcard $(DIR)/*.c))

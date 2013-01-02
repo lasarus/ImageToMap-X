@@ -5,7 +5,7 @@ LFLAGS := `./pkg-config-script-mac --libs gtk+-2.0` -lm -lz
 OBJ := obj/mac/
 BIN := bin/mac/
 
-TARGET := $(BIN)ImageToMap
+TARGET := $(BIN)ImageToMapX
 APP := $(TARGET).app/Contents/
 
 SRCDIRS := src src/* src/*/* src/*/*/*

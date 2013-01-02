@@ -7,7 +7,7 @@ WINDRES := i486-mingw32-windres
 OBJ := obj/windows/
 BIN := bin/windows/
 
-TARGET := $(BIN)ImageToMap.exe
+TARGET := $(BIN)ImageToMapX.exe
 
 SRCDIRS := src src/* src/*/* src/*/*/*
 SOURCES := $(foreach DIR, $(SRCDIRS), $(wildcard $(DIR)/*.c))
