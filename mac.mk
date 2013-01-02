@@ -5,7 +5,7 @@ LFLAGS := `./pkg-config-script-mac --libs gtk+-2.0` -lm -lz
 OBJ := obj/mac/
 BIN := bin/mac/
 
-TARGET := $(BIN)ImageToMap
+TARGET := $(BIN)ImageToMapX
 APP := $(TARGET).app/Contents/
 
 SRCDIRS := src src/* src/*/* src/*/*/*
@@ -16,10 +16,12 @@ OBJECTS = $(patsubst %.c, $(OBJ)%.o, $(SOURCES))
 
 all: $(TARGET)
 	mkdir -p $(APP){MacOS,Resources}
-	cp $(TARGET) $(APP)MacOS/ImageToMap
-	cp /usr/i686-apple-darwin10/lib/*.dylib $(APP)MacOS/
-	cp -r resources/* $(APP)Resources/
+	cp mac/ImageToMapX $(APP)MacOS/ImageToMapX
+	cp $(TARGET) $(APP)MacOS/ImageToMapX-bin
+	cp mac/dylib/* $(APP)MacOS/
+	cp -r resources/* $(APP)MacOS/
 	cp mac/Info.plist mac/PkgInfo $(APP)
+	cp mac/ImageToMapX.icns $(APP)Resources/
 	chmod -R 755 $(APP)
 
 $(OBJ)%.o: %.c

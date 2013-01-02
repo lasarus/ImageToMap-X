@@ -5,17 +5,17 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>English</string>
     <key>CFBundleExecutable</key>
-    <string>ImageToMap</string>
+    <string>ImageToMapX</string>
     <key>CFBundleGetInfoString</key>
     <string>1.0</string>
     <key>CFBundleIconFile</key>
-    <string>ImageToMap.icns</string>
+    <string>ImageToMapX</string>
     <key>CFBundleIdentifier</key>
-    <string>me.lasarus.imagetomap</string>
+    <string>me.lasarus.imagetomapx</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>ImageToMap</string>
+    <string>ImageToMapX</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
