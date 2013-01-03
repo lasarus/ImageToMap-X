@@ -33,9 +33,11 @@ static GtkWidget * window;
 int current_buffer = 0;
 static GdkPixbuf * dimage;
 static GtkWidget * image;
+static GtkWidget * list_vbox;
 
 color_t * colors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
+GtkWidget * icons[BUFFER_COUNT];
 
 configvars_t * config_new()
 {
@@ -95,34 +97,68 @@ GdkPixbuf * image_from_data(unsigned char * data, int scale)
   return pixbuf;
 }
 
-void set_image()
+GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
 {
-  unsigned char * data = malloc(128 * 128 * 3);
+  unsigned char * tmpdata = malloc(128 * 128 * 3);
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      if(mdata[current_buffer][i] > 3)
+      if(data[i] > 3)
 	{
-	  data[i * 3] = colors[mdata[current_buffer][i]].r;
-	  data[i * 3 + 1] = colors[mdata[current_buffer][i]].g;
-	  data[i * 3 + 2] = colors[mdata[current_buffer][i]].b;
+	  tmpdata[i * 3] = colors[data[i]].r;
+	  tmpdata[i * 3 + 1] = colors[data[i]].g;
+	  tmpdata[i * 3 + 2] = colors[data[i]].b;
 	}
       else
 	{
 	  int x = i % 128, y = i / 128;
 	  x /= 4;
 	  y /= 4;
-	  data[i * 3] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
-	  data[i * 3 + 1] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
-	  data[i * 3 + 2] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
+	  tmpdata[i * 3] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
+	  tmpdata[i * 3 + 1] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
+	  tmpdata[i * 3 + 2] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
 	}
     }
 	
-  GdkPixbuf * fdata = image_from_data(data, 1);
+  GdkPixbuf * fdata = image_from_data(tmpdata, scale);
+  free(tmpdata);
+
+  return fdata;
+}
+
+void update_sidepanel()
+{
+  int i;
+  for(i = 0; i < BUFFER_COUNT; i++)
+    {
+      if(icons[i] != NULL)
+	{
+	  gtk_widget_hide(icons[i]);
+	  gtk_widget_destroy(icons[i]);
+	  icons[i] = NULL;
+	}
+    }
+
+  for(i = 0; i < BUFFER_COUNT; i++)
+    {
+      if(mdata[i] != NULL)
+	{
+	  icons[i] = gtk_image_new();
+	  gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
+	  gtk_box_pack_start(GTK_BOX(list_vbox), icons[i], TRUE, TRUE, 0);
+	  gtk_widget_show(icons[i]);
+	}
+    }
+}
+
+void set_image()
+{	
+  GdkPixbuf * fdata = get_pixbuf_from_data(mdata[current_buffer], 1);
   g_object_unref(dimage);
   dimage = fdata;
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), fdata);
-  free(data);
+
+  update_sidepanel();
 }
 
 void image_load_map(char * path)
@@ -381,7 +417,7 @@ GdkPixbuf *create_pixbuf(const gchar * filename)
 
 int main(int argc, char ** argv)
 {
-  GtkWidget * vbox, * list_vbox;
+  GtkWidget * vbox;
   GtkWidget * hpaned;
   GtkWidget * sc_win;
   GtkWidget * menu_bar;
@@ -393,7 +429,8 @@ int main(int argc, char ** argv)
 	
   //init general
   colors = (color_t *)malloc(56 * sizeof(color_t));
-  memset(mdata, 0, 256 * sizeof(unsigned char *));
+  memset(mdata, 0, BUFFER_COUNT * sizeof(unsigned char *));
+  memset(icons, 0, BUFFER_COUNT * sizeof(GtkWidget *));
   mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
 	
   char * templine = malloc(13);
@@ -562,8 +599,8 @@ int main(int argc, char ** argv)
   gtk_widget_show(sc_win);
 	
   //////image
-  dimage = gdk_pixbuf_new_from_file("start.png", NULL); // NOTE!!! THIS SHOULD BE CHANGED TO SUPPORT MULTIPLE BUFFERS
-  image = gtk_image_new(); // THIS TOO
+  dimage = gdk_pixbuf_new_from_file("start.png", NULL);
+  image = gtk_image_new();
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), dimage);
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_win), image);
   gtk_widget_show(image);
