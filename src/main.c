@@ -233,26 +233,35 @@ int srecmpend(char * end, char * str)
   return strcmp(end, str);
 }
 
-void add_buffer()
+int get_buffer_count()
 {
   int i;
   for(i = 0; i < BUFFER_COUNT; i++)
     {
       if(mdata[i] == NULL)
 	{
-	  current_buffer = i;
-	  break;
+	  return i;
 	}
     }
+  return BUFFER_COUNT;
+}
+
+void add_buffer()
+{
+  current_buffer = get_buffer_count();
   mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
 }
 
 void remove_buffer(int id)
 {
+  if(get_buffer_count() == 1)
+    return;
   free(mdata[id]);
   memmove(&(mdata[id]), &(mdata[id + 1]), BUFFER_COUNT - id - 2);
   mdata[BUFFER_COUNT - 1] = NULL;
-  update_sidepanel();
+  if(mdata[current_buffer] == NULL)
+    current_buffer--;
+  set_image();
 }
 
 static void button_click(gpointer data)
