@@ -24,14 +24,18 @@
 #include "generate.h"
 #include "nbtsave.h"
 
+#define BUFFER_COUNT 256
+
 configvars_t * config = NULL;
 
 static GtkWidget * window;
+
+int current_buffer = 0;
 static GdkPixbuf * dimage;
 static GtkWidget * image;
 
 color_t * colors = NULL;
-unsigned char * mdata = NULL;
+unsigned char * mdata[BUFFER_COUNT];
 
 configvars_t * config_new()
 {
@@ -97,11 +101,11 @@ void set_image()
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      if(mdata[i] > 3)
+      if(mdata[current_buffer][i] > 3)
 	{
-	  data[i * 3] = colors[mdata[i]].r;
-	  data[i * 3 + 1] = colors[mdata[i]].g;
-	  data[i * 3 + 2] = colors[mdata[i]].b;
+	  data[i * 3] = colors[mdata[current_buffer][i]].r;
+	  data[i * 3 + 1] = colors[mdata[current_buffer][i]].g;
+	  data[i * 3 + 2] = colors[mdata[current_buffer][i]].b;
 	}
       else
 	{
@@ -137,7 +141,7 @@ void image_load_map(char * path)
 
 void save_map(char * path)
 {
-  nbt_save_map(path, 0, 3, 128, 128, 13371337, -13371337, mdata);
+  nbt_save_map(path, 0, 3, 128, 128, 13371337, -13371337, mdata[current_buffer]);
 }
 
 static gboolean kill_window(GtkWidget * widget, GdkEvent * event, gpointer data)
@@ -180,7 +184,7 @@ static void button_click(gpointer data)
 	  else if(srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
 	    {
 	      GError * err = NULL;
-	      generate_image(mdata, file, colors, &err);
+	      generate_image(mdata[current_buffer], file, colors, &err);
 	      if(err != NULL)
 		{
 		  information("Error while loading image file!");
@@ -191,7 +195,7 @@ static void button_click(gpointer data)
 	    }
 	  else if(srecmpend(".imtm", file) == 0)
 	    {
-	      load_raw_map(file, mdata);
+	      load_raw_map(file, mdata[current_buffer]);
 	      set_image();
 	    }
 	  else
@@ -227,7 +231,7 @@ static void button_click(gpointer data)
     }
   else if(strcmp("button.exp_img", (char *)data) == 0)
     {
-      if(mdata == NULL)
+      if(mdata[current_buffer] == NULL)
 	return;
 			
       GtkWidget * dialog;
@@ -252,11 +256,11 @@ static void button_click(gpointer data)
 	  int i;
 	  for(i = 0; i < 128 * 128; i++)
 	    {
-	      if(mdata[i] > 3)
+	      if(mdata[current_buffer][i] > 3)
 		{
-		  data[i * 3] = colors[mdata[i]].r;
-		  data[i * 3 + 1] = colors[mdata[i]].g;
-		  data[i * 3 + 2] = colors[mdata[i]].b;
+		  data[i * 3] = colors[mdata[current_buffer][i]].r;
+		  data[i * 3 + 1] = colors[mdata[current_buffer][i]].g;
+		  data[i * 3 + 2] = colors[mdata[current_buffer][i]].b;
 		}
 	      else
 		{
@@ -307,23 +311,23 @@ static void button_click(gpointer data)
 	{
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	  printf("%s\n", file);
-	  save_raw_map(file, mdata);
+	  save_raw_map(file, mdata[current_buffer]);
 	}
       gtk_widget_destroy(dialog);
     }
   else if(strcmp("button.palette", (char *)data) == 0)
     {
-      generate_palette(mdata);
+      generate_palette(mdata[current_buffer]);
       set_image();
     }
   else if(strcmp("button.mandelbrot", (char *)data) == 0)
     {
-      generate_mandelbrot(mdata);
+      generate_mandelbrot(mdata[current_buffer]);
       set_image();
     }
   else if(strcmp("button.julia", (char *)data) == 0)
     {
-      generate_julia(mdata, 0.5, 0.5);
+      generate_julia(mdata[current_buffer], 0.5, 0.5);
       set_image();
     }
   else
@@ -378,7 +382,7 @@ GdkPixbuf *create_pixbuf(const gchar * filename)
 int main(int argc, char ** argv)
 {
   GtkWidget * vbox, * list_vbox;
-  GtkWidget * hpaned/*, * list_frame*/;
+  GtkWidget * hpaned;
   GtkWidget * sc_win;
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
@@ -389,7 +393,8 @@ int main(int argc, char ** argv)
 	
   //init general
   colors = (color_t *)malloc(56 * sizeof(color_t));
-  mdata = (unsigned char *)malloc(128 * 128);
+  memset(mdata, 0, 256 * sizeof(unsigned char *));
+  mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
 	
   char * templine = malloc(13);
   FILE * fcolors = fopen("colors", "r");
@@ -535,11 +540,11 @@ int main(int argc, char ** argv)
 
   //////list_vbox
 #ifdef GTK2
-  list_vbox = gtk_hbox_new(FALSE, 0);
+  list_vbox = gtk_vbox_new(FALSE, 0);
 #else
   list_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #endif
-  gtk_widget_set_size_request(list_vbox, 50, -1);
+  //gtk_widget_set_size_request(list_vbox, 256, -1);
   gtk_paned_pack2(GTK_PANED(hpaned), list_vbox, FALSE, FALSE);
   gtk_widget_show(list_vbox);
 
@@ -557,8 +562,8 @@ int main(int argc, char ** argv)
   gtk_widget_show(sc_win);
 	
   //////image
-  dimage = gdk_pixbuf_new_from_file("start.png", NULL);
-  image = gtk_image_new();
+  dimage = gdk_pixbuf_new_from_file("start.png", NULL); // NOTE!!! THIS SHOULD BE CHANGED TO SUPPORT MULTIPLE BUFFERS
+  image = gtk_image_new(); // THIS TOO
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), dimage);
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_win), image);
   gtk_widget_show(image);
@@ -602,7 +607,8 @@ int main(int argc, char ** argv)
 	
   //clean up
   free(colors);
-  free(mdata);
+  for(i = 0; i < BUFFER_COUNT; i++)
+    free(mdata[i]);
   config_free(config);
 	
   return 0;
