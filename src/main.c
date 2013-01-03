@@ -27,6 +27,8 @@
 #define BUFFER_COUNT 256
 
 void set_image();
+void remove_buffer(int id);
+void update_sidepanel();
 
 configvars_t * config = NULL;
 
@@ -136,8 +138,17 @@ GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
 
 static gboolean buffer_callback(GtkWidget * event_box, GdkEventButton * event, gpointer data)
 {
-  current_buffer = (size_t)data;
-  set_image();
+  if(event->button == 1)
+    {
+      current_buffer = (size_t)data;
+      set_image();
+    }
+  else if(event->button == 3)
+    {
+      remove_buffer((size_t)data);
+    }
+  else
+    return FALSE;
   return TRUE;
 }
 
@@ -234,6 +245,14 @@ void add_buffer()
 	}
     }
   mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
+}
+
+void remove_buffer(int id)
+{
+  free(mdata[id]);
+  memmove(&(mdata[id]), &(mdata[id + 1]), BUFFER_COUNT - id - 2);
+  mdata[BUFFER_COUNT - 1] = NULL;
+  update_sidepanel();
 }
 
 static void button_click(gpointer data)
