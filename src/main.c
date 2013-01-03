@@ -94,7 +94,12 @@ GdkPixbuf * image_from_data(unsigned char * data, int scale)
       g_object_unref(pixbuf);
       return rpixbuf;
     }
-  return pixbuf;
+  else
+    {
+      GdkPixbuf * rpixbuf = gdk_pixbuf_scale_simple(pixbuf, 128, 128, GDK_INTERP_NEAREST); // Don't ask me why this is needed
+      g_object_unref(pixbuf);
+      return rpixbuf;
+    }
 }
 
 GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
