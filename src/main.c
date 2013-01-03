@@ -377,7 +377,8 @@ GdkPixbuf *create_pixbuf(const gchar * filename)
 
 int main(int argc, char ** argv)
 {
-  GtkWidget * vbox;
+  GtkWidget * vbox, * list_vbox;
+  GtkWidget * hpaned/*, * list_frame*/;
   GtkWidget * sc_win;
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
@@ -515,24 +516,50 @@ int main(int argc, char ** argv)
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(generate_item), generate_menu);
   gtk_menu_shell_append((GtkMenuShell *)menu_bar, generate_item);
 	
-  //sc_win
+  //hpaned
+#ifdef GTK2
+  hpaned = gtk_hpaned_new();
+#else
+  hpaned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+#endif
+  gtk_widget_set_size_request (hpaned, 220, -1);
+  gtk_box_pack_start(GTK_BOX(vbox), hpaned, TRUE, TRUE, 0);
+  gtk_widget_show(hpaned);
+
+  ////list_frame
+  /*list_frame = gtk_frame_new(NULL);
+  gtk_frame_set_shadow_type(GTK_FRAME(list_frame), GTK_SHADOW_IN);
+  gtk_paned_pack2(GTK_PANED(hpaned), list_frame, FALSE, FALSE);
+  gtk_widget_set_size_request(list_frame, 50, -1);
+  gtk_widget_show(list_frame);*/
+
+  //////list_vbox
+#ifdef GTK2
+  list_vbox = gtk_hbox_new(FALSE, 0);
+#else
+  list_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#endif
+  gtk_widget_set_size_request(list_vbox, 50, -1);
+  gtk_paned_pack2(GTK_PANED(hpaned), list_vbox, FALSE, FALSE);
+  gtk_widget_show(list_vbox);
+
+  ////sc_win
   sc_win = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sc_win), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 #ifdef GTK2
-   gtk_widget_set_size_request(sc_win, 128 * 4, 128 * 4);
-   gtk_window_resize(GTK_WINDOW(window), 128 * 4 + 21, 128 * 4 + 50);
+  gtk_widget_set_size_request(sc_win, 128 * 4, 128 * 4);
+  gtk_window_resize(GTK_WINDOW(window), 128 * 4 + 21, 128 * 4 + 50);
 #else
   gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_win), 128 * 4);
   gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(sc_win), 128 * 4);
 #endif
-  gtk_box_pack_start(GTK_BOX(vbox), sc_win, TRUE, TRUE, 0);
+  gtk_paned_pack1(GTK_PANED(hpaned), sc_win, TRUE, FALSE);
   gtk_widget_show(sc_win);
 	
-  ////image
+  //////image
   dimage = gdk_pixbuf_new_from_file("start.png", NULL);
   image = gtk_image_new();
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), dimage);
-  //image = gtk_image_new_from_file(/*"start.jpg"*/ "start2.png");
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_win), image);
   gtk_widget_show(image);
 	
