@@ -30,7 +30,7 @@ configvars_t * config = NULL;
 
 static GtkWidget * window;
 
-int current_buffer = 0;
+int current_buffer = -1;
 static GdkPixbuf * dimage;
 static GtkWidget * image;
 static GtkWidget * list_vbox;
@@ -150,7 +150,7 @@ void update_sidepanel()
 	{
 	  icons[i] = gtk_image_new();
 	  gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
-	  gtk_box_pack_start(GTK_BOX(list_vbox), icons[i], TRUE, TRUE, 0);
+	  gtk_box_pack_start(GTK_BOX(list_vbox), icons[i], FALSE, TRUE, 2);
 	  gtk_widget_show(icons[i]);
 	}
     }
@@ -204,6 +204,12 @@ int srecmpend(char * end, char * str)
   return strcmp(end, str);
 }
 
+void add_buffer()
+{
+  current_buffer++;
+  mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
+}
+
 static void button_click(gpointer data)
 {
   if(strcmp("button.open", (char *)data) == 0)
@@ -225,6 +231,7 @@ static void button_click(gpointer data)
 	  else if(srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
 	    {
 	      GError * err = NULL;
+	      add_buffer();
 	      generate_image(mdata[current_buffer], file, colors, &err);
 	      if(err != NULL)
 		{
@@ -236,6 +243,7 @@ static void button_click(gpointer data)
 	    }
 	  else if(srecmpend(".imtm", file) == 0)
 	    {
+	      add_buffer();
 	      load_raw_map(file, mdata[current_buffer]);
 	      set_image();
 	    }
@@ -314,7 +322,7 @@ static void button_click(gpointer data)
 		}
 	    }
 			
-	  GdkPixbuf * spixbuf = image_from_data(data, 1);
+	  GdkPixbuf * spixbuf = image_from_data(data, 0);
 	  free(data);
 			
 	  GError * err = NULL;
@@ -358,16 +366,19 @@ static void button_click(gpointer data)
     }
   else if(strcmp("button.palette", (char *)data) == 0)
     {
+      add_buffer();
       generate_palette(mdata[current_buffer]);
       set_image();
     }
   else if(strcmp("button.mandelbrot", (char *)data) == 0)
     {
+      add_buffer();
       generate_mandelbrot(mdata[current_buffer]);
       set_image();
     }
   else if(strcmp("button.julia", (char *)data) == 0)
     {
+      add_buffer();
       generate_julia(mdata[current_buffer], 0.5, 0.5);
       set_image();
     }
@@ -424,7 +435,7 @@ int main(int argc, char ** argv)
 {
   GtkWidget * vbox;
   GtkWidget * hpaned;
-  GtkWidget * sc_win;
+  GtkWidget * sc_win, * sc_buffer;
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
   GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item;
@@ -573,12 +584,17 @@ int main(int argc, char ** argv)
   gtk_box_pack_start(GTK_BOX(vbox), hpaned, TRUE, TRUE, 0);
   gtk_widget_show(hpaned);
 
-  ////list_frame
-  /*list_frame = gtk_frame_new(NULL);
-  gtk_frame_set_shadow_type(GTK_FRAME(list_frame), GTK_SHADOW_IN);
-  gtk_paned_pack2(GTK_PANED(hpaned), list_frame, FALSE, FALSE);
-  gtk_widget_set_size_request(list_frame, 50, -1);
-  gtk_widget_show(list_frame);*/
+  ////sc_buffer
+  sc_buffer = gtk_scrolled_window_new(NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sc_buffer), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+#ifdef GTK2
+  gtk_widget_set_size_request(sc_buffer, 150, 512);
+#else
+  gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_buffer), 128 + 16);
+  gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(sc_buffer), 512);
+#endif
+  gtk_paned_pack2(GTK_PANED(hpaned), sc_buffer, FALSE, FALSE);
+  gtk_widget_show(sc_buffer);
 
   //////list_vbox
 #ifdef GTK2
@@ -587,7 +603,7 @@ int main(int argc, char ** argv)
   list_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #endif
   //gtk_widget_set_size_request(list_vbox, 256, -1);
-  gtk_paned_pack2(GTK_PANED(hpaned), list_vbox, FALSE, FALSE);
+  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_buffer), list_vbox);
   gtk_widget_show(list_vbox);
 
   ////sc_win
