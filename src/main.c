@@ -24,14 +24,25 @@
 #include "generate.h"
 #include "nbtsave.h"
 
+#define BUFFER_COUNT 256
+
+void set_image();
+void remove_buffer(int id);
+void update_sidepanel();
+
 configvars_t * config = NULL;
 
 static GtkWidget * window;
+
+int current_buffer = -1;
 static GdkPixbuf * dimage;
 static GtkWidget * image;
+static GtkWidget * list_vbox;
 
 color_t * colors = NULL;
-unsigned char * mdata = NULL;
+unsigned char * mdata[BUFFER_COUNT];
+GtkWidget * icons[BUFFER_COUNT];
+GtkWidget * icon_event_boxes[BUFFER_COUNT];
 
 configvars_t * config_new()
 {
@@ -88,37 +99,100 @@ GdkPixbuf * image_from_data(unsigned char * data, int scale)
       g_object_unref(pixbuf);
       return rpixbuf;
     }
-  return pixbuf;
+  else
+    {
+      GdkPixbuf * rpixbuf = gdk_pixbuf_scale_simple(pixbuf, 128, 128, GDK_INTERP_NEAREST); // Don't ask me why this is needed
+      g_object_unref(pixbuf);
+      return rpixbuf;
+    }
 }
 
-void set_image()
+GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
 {
-  unsigned char * data = malloc(128 * 128 * 3);
+  unsigned char * tmpdata = malloc(128 * 128 * 3);
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      if(mdata[i] > 3)
+      if(data[i] > 3)
 	{
-	  data[i * 3] = colors[mdata[i]].r;
-	  data[i * 3 + 1] = colors[mdata[i]].g;
-	  data[i * 3 + 2] = colors[mdata[i]].b;
+	  tmpdata[i * 3] = colors[data[i]].r;
+	  tmpdata[i * 3 + 1] = colors[data[i]].g;
+	  tmpdata[i * 3 + 2] = colors[data[i]].b;
 	}
       else
 	{
 	  int x = i % 128, y = i / 128;
 	  x /= 4;
 	  y /= 4;
-	  data[i * 3] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
-	  data[i * 3 + 1] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
-	  data[i * 3 + 2] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
+	  tmpdata[i * 3] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
+	  tmpdata[i * 3 + 1] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
+	  tmpdata[i * 3 + 2] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
 	}
     }
 	
-  GdkPixbuf * fdata = image_from_data(data, 1);
+  GdkPixbuf * fdata = image_from_data(tmpdata, scale);
+  free(tmpdata);
+
+  return fdata;
+}
+
+static gboolean buffer_callback(GtkWidget * event_box, GdkEventButton * event, gpointer data)
+{
+  if(event->button == 1)
+    {
+      current_buffer = (size_t)data;
+      set_image();
+    }
+  else if(event->button == 3)
+    {
+      remove_buffer((size_t)data);
+    }
+  else
+    return FALSE;
+  return TRUE;
+}
+
+void update_sidepanel()
+{
+  int i;
+  for(i = 0; i < BUFFER_COUNT; i++)
+    {
+      if(icons[i] != NULL)
+	{
+	  gtk_widget_hide(icons[i]);
+	  gtk_widget_destroy(icons[i]);
+	  gtk_widget_hide(icon_event_boxes[i]);
+	  gtk_widget_destroy(icon_event_boxes[i]);
+	  icons[i] = NULL;
+	  icon_event_boxes[i] = NULL;
+	}
+    }
+
+  for(i = 0; i < BUFFER_COUNT; i++)
+    {
+      if(mdata[i] != NULL)
+	{
+	  icons[i] = gtk_image_new();
+	  icon_event_boxes[i] = gtk_event_box_new();
+	  gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
+	  gtk_box_pack_start(GTK_BOX(list_vbox), icon_event_boxes[i], FALSE, TRUE, 2);
+	  gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
+	  gtk_widget_show(icons[i]);
+	  gtk_widget_show(icon_event_boxes[i]);
+
+	  g_signal_connect(G_OBJECT(icon_event_boxes[i]), "button_press_event", G_CALLBACK(buffer_callback), (gpointer *)(size_t)i);
+	}
+    }
+}
+
+void set_image()
+{	
+  GdkPixbuf * fdata = get_pixbuf_from_data(mdata[current_buffer], 1);
   g_object_unref(dimage);
   dimage = fdata;
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), fdata);
-  free(data);
+
+  update_sidepanel();
 }
 
 void image_load_map(char * path)
@@ -137,7 +211,7 @@ void image_load_map(char * path)
 
 void save_map(char * path)
 {
-  nbt_save_map(path, 0, 3, 128, 128, 13371337, -13371337, mdata);
+  nbt_save_map(path, 0, 3, 128, 128, 13371337, -13371337, mdata[current_buffer]);
 }
 
 static gboolean kill_window(GtkWidget * widget, GdkEvent * event, gpointer data)
@@ -157,6 +231,28 @@ int srecmpend(char * end, char * str)
   str += slen - elen;
 	
   return strcmp(end, str);
+}
+
+void add_buffer()
+{
+  int i;
+  for(i = 0; i < BUFFER_COUNT; i++)
+    {
+      if(mdata[i] == NULL)
+	{
+	  current_buffer = i;
+	  break;
+	}
+    }
+  mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
+}
+
+void remove_buffer(int id)
+{
+  free(mdata[id]);
+  memmove(&(mdata[id]), &(mdata[id + 1]), BUFFER_COUNT - id - 2);
+  mdata[BUFFER_COUNT - 1] = NULL;
+  update_sidepanel();
 }
 
 static void button_click(gpointer data)
@@ -180,7 +276,8 @@ static void button_click(gpointer data)
 	  else if(srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
 	    {
 	      GError * err = NULL;
-	      generate_image(mdata, file, colors, &err);
+	      add_buffer();
+	      generate_image(mdata[current_buffer], file, colors, &err);
 	      if(err != NULL)
 		{
 		  information("Error while loading image file!");
@@ -191,7 +288,8 @@ static void button_click(gpointer data)
 	    }
 	  else if(srecmpend(".imtm", file) == 0)
 	    {
-	      load_raw_map(file, mdata);
+	      add_buffer();
+	      load_raw_map(file, mdata[current_buffer]);
 	      set_image();
 	    }
 	  else
@@ -227,7 +325,7 @@ static void button_click(gpointer data)
     }
   else if(strcmp("button.exp_img", (char *)data) == 0)
     {
-      if(mdata == NULL)
+      if(mdata[current_buffer] == NULL)
 	return;
 			
       GtkWidget * dialog;
@@ -252,11 +350,11 @@ static void button_click(gpointer data)
 	  int i;
 	  for(i = 0; i < 128 * 128; i++)
 	    {
-	      if(mdata[i] > 3)
+	      if(mdata[current_buffer][i] > 3)
 		{
-		  data[i * 3] = colors[mdata[i]].r;
-		  data[i * 3 + 1] = colors[mdata[i]].g;
-		  data[i * 3 + 2] = colors[mdata[i]].b;
+		  data[i * 3] = colors[mdata[current_buffer][i]].r;
+		  data[i * 3 + 1] = colors[mdata[current_buffer][i]].g;
+		  data[i * 3 + 2] = colors[mdata[current_buffer][i]].b;
 		}
 	      else
 		{
@@ -269,7 +367,7 @@ static void button_click(gpointer data)
 		}
 	    }
 			
-	  GdkPixbuf * spixbuf = image_from_data(data, 1);
+	  GdkPixbuf * spixbuf = image_from_data(data, 0);
 	  free(data);
 			
 	  GError * err = NULL;
@@ -307,23 +405,26 @@ static void button_click(gpointer data)
 	{
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	  printf("%s\n", file);
-	  save_raw_map(file, mdata);
+	  save_raw_map(file, mdata[current_buffer]);
 	}
       gtk_widget_destroy(dialog);
     }
   else if(strcmp("button.palette", (char *)data) == 0)
     {
-      generate_palette(mdata);
+      add_buffer();
+      generate_palette(mdata[current_buffer]);
       set_image();
     }
   else if(strcmp("button.mandelbrot", (char *)data) == 0)
     {
-      generate_mandelbrot(mdata);
+      add_buffer();
+      generate_mandelbrot(mdata[current_buffer]);
       set_image();
     }
   else if(strcmp("button.julia", (char *)data) == 0)
     {
-      generate_julia(mdata, 0.5, 0.5);
+      add_buffer();
+      generate_julia(mdata[current_buffer], 0.5, 0.5);
       set_image();
     }
   else
@@ -362,7 +463,7 @@ static void button_click2(GtkWidget * widget, gpointer data)
     }
 }
 
-GdkPixbuf *create_pixbuf(const gchar * filename)
+GdkPixbuf * create_pixbuf(const gchar * filename)
 {
    GdkPixbuf *pixbuf;
    GError *error = NULL;
@@ -378,17 +479,20 @@ GdkPixbuf *create_pixbuf(const gchar * filename)
 int main(int argc, char ** argv)
 {
   GtkWidget * vbox;
-  GtkWidget * sc_win;
+  GtkWidget * hpaned;
+  GtkWidget * sc_win, * sc_buffer;
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
   GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item;
-  //GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
 	
   GtkWidget * zoom_box, * zoom_button;
 	
   //init general
   colors = (color_t *)malloc(56 * sizeof(color_t));
-  mdata = (unsigned char *)malloc(128 * 128);
+  memset(mdata, 0, BUFFER_COUNT * sizeof(unsigned char *));
+  memset(icons, 0, BUFFER_COUNT * sizeof(GtkWidget *));
+  memset(icon_event_boxes, 0, BUFFER_COUNT * sizeof(GtkWidget *));
+  mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
 	
   char * templine = malloc(13);
   FILE * fcolors = fopen("colors", "r");
@@ -515,24 +619,54 @@ int main(int argc, char ** argv)
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(generate_item), generate_menu);
   gtk_menu_shell_append((GtkMenuShell *)menu_bar, generate_item);
 	
-  //sc_win
+  //hpaned
+#ifdef GTK2
+  hpaned = gtk_hpaned_new();
+#else
+  hpaned = gtk_paned_new(GTK_ORIENTATION_HORIZONTAL);
+#endif
+  gtk_widget_set_size_request (hpaned, 220, -1);
+  gtk_box_pack_start(GTK_BOX(vbox), hpaned, TRUE, TRUE, 0);
+  gtk_widget_show(hpaned);
+
+  ////sc_buffer
+  sc_buffer = gtk_scrolled_window_new(NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sc_buffer), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+#ifdef GTK2
+  gtk_widget_set_size_request(sc_buffer, 150, 512);
+#else
+  gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_buffer), 128 + 16);
+  gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(sc_buffer), 512);
+#endif
+  gtk_paned_pack2(GTK_PANED(hpaned), sc_buffer, FALSE, FALSE);
+  gtk_widget_show(sc_buffer);
+
+  //////list_vbox
+#ifdef GTK2
+  list_vbox = gtk_vbox_new(FALSE, 0);
+#else
+  list_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+#endif
+  gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_buffer), list_vbox);
+  gtk_widget_show(list_vbox);
+
+  ////sc_win
   sc_win = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sc_win), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 #ifdef GTK2
-   gtk_widget_set_size_request(sc_win, 128 * 4, 128 * 4);
-   gtk_window_resize(GTK_WINDOW(window), 128 * 4 + 21, 128 * 4 + 50);
+  gtk_widget_set_size_request(sc_win, 128 * 4, 128 * 4);
+  gtk_window_resize(GTK_WINDOW(window), 128 * 4 + 21, 128 * 4 + 50);
 #else
   gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_win), 128 * 4);
   gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(sc_win), 128 * 4);
 #endif
-  gtk_box_pack_start(GTK_BOX(vbox), sc_win, TRUE, TRUE, 0);
+  gtk_paned_pack1(GTK_PANED(hpaned), sc_win, TRUE, FALSE);
   gtk_widget_show(sc_win);
 	
-  ////image
+  //////image
   dimage = gdk_pixbuf_new_from_file("start.png", NULL);
   image = gtk_image_new();
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), dimage);
-  //image = gtk_image_new_from_file(/*"start.jpg"*/ "start2.png");
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_win), image);
   gtk_widget_show(image);
 	
@@ -575,7 +709,8 @@ int main(int argc, char ** argv)
 	
   //clean up
   free(colors);
-  free(mdata);
+  for(i = 0; i < BUFFER_COUNT; i++)
+    free(mdata[i]);
   config_free(config);
 	
   return 0;
