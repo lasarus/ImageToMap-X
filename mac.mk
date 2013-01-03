@@ -15,6 +15,7 @@ OBJECTS = $(patsubst %.c, $(OBJ)%.o, $(SOURCES))
 .PHONY: all
 
 all: $(TARGET)
+	mac/fix.sh $(TARGET)
 	mkdir -p $(APP){MacOS,Resources}
 	cp mac/ImageToMapX $(APP)MacOS/ImageToMapX
 	cp $(TARGET) $(APP)MacOS/ImageToMapX-bin
