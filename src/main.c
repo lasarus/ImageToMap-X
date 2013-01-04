@@ -11,6 +11,8 @@
    You should have received a copy of the GNU General Public License
    along with ImageToMapX. If not, see <http://www.gnu.org/licenses/>. */
 
+#include "../version"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -165,7 +167,7 @@ static void drop_down_menu_callback(gpointer data)
     }
   else if(strcmp("drop_down_menu.move_down", (char *)data) == 0)
     {
-      if(drop_down_menu_id < get_buffer_count())
+      if(drop_down_menu_id < get_buffer_count() - 1)
 	{
 	  unsigned char * tmpdata = mdata[drop_down_menu_id];
 	  mdata[drop_down_menu_id] = mdata[drop_down_menu_id + 1];
@@ -644,7 +646,7 @@ int main(int argc, char ** argv)
 	
   //window
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_title(GTK_WINDOW(window), "ImageToMap X v1");
+  gtk_window_set_title(GTK_WINDOW(window), "ImageToMap X v" VERSION_NUMBER);
   g_signal_connect(window, "delete_event", G_CALLBACK(kill_window), NULL);
 	
   //vbox
