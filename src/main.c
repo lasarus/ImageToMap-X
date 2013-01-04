@@ -41,6 +41,8 @@ static GtkWidget * list_vbox;
 
 color_t * colors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
+
+GtkWidget * selected_buffer_frame;
 GtkWidget * icons[BUFFER_COUNT];
 GtkWidget * icon_event_boxes[BUFFER_COUNT];
 
@@ -172,15 +174,46 @@ void update_sidepanel()
     {
       if(mdata[i] != NULL)
 	{
-	  icons[i] = gtk_image_new();
-	  icon_event_boxes[i] = gtk_event_box_new();
-	  gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
-	  gtk_box_pack_start(GTK_BOX(list_vbox), icon_event_boxes[i], FALSE, TRUE, 2);
-	  gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
-	  gtk_widget_show(icons[i]);
-	  gtk_widget_show(icon_event_boxes[i]);
+	  if(i == current_buffer)
+	    {
+	      GdkColor color;
 
-	  g_signal_connect(G_OBJECT(icon_event_boxes[i]), "button_press_event", G_CALLBACK(buffer_callback), (gpointer *)(size_t)i);
+	      gdk_color_parse("red", &color);
+
+	      gtk_widget_destroy(selected_buffer_frame);
+	      selected_buffer_frame = gtk_frame_new(NULL);
+	      gtk_widget_modify_bg(selected_buffer_frame, GTK_STATE_NORMAL, &color);
+	      gtk_box_pack_start(GTK_BOX(list_vbox), selected_buffer_frame, FALSE, TRUE, 1);
+
+	      icons[i] = gtk_image_new();
+	      icon_event_boxes[i] = gtk_event_box_new();
+
+	      gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
+
+	      gtk_container_add(GTK_CONTAINER(selected_buffer_frame), icon_event_boxes[i]);
+	      gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
+
+	      gtk_widget_show(icons[i]);
+	      gtk_widget_show(icon_event_boxes[i]);
+	      gtk_widget_show(selected_buffer_frame);
+
+	      g_signal_connect(G_OBJECT(icon_event_boxes[i]), "button_press_event", G_CALLBACK(buffer_callback), (gpointer *)(size_t)i);
+	    }
+	  else
+	    {
+	      icons[i] = gtk_image_new();
+	      icon_event_boxes[i] = gtk_event_box_new();
+
+	      gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
+
+	      gtk_box_pack_start(GTK_BOX(list_vbox), icon_event_boxes[i], FALSE, TRUE, 2);
+	      gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
+
+	      gtk_widget_show(icons[i]);
+	      gtk_widget_show(icon_event_boxes[i]);
+
+	      g_signal_connect(G_OBJECT(icon_event_boxes[i]), "button_press_event", G_CALLBACK(buffer_callback), (gpointer *)(size_t)i);
+	    }
 	}
     }
 }
@@ -642,9 +675,9 @@ int main(int argc, char ** argv)
   sc_buffer = gtk_scrolled_window_new(NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sc_buffer), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 #ifdef GTK2
-  gtk_widget_set_size_request(sc_buffer, 150, 512);
+  gtk_widget_set_size_request(sc_buffer, 128 + 32, 512);
 #else
-  gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_buffer), 128 + 16);
+  gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_buffer), 128 + 32);
   gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(sc_buffer), 512);
 #endif
   gtk_paned_pack2(GTK_PANED(hpaned), sc_buffer, FALSE, FALSE);
