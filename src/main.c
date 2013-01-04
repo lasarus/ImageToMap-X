@@ -312,8 +312,8 @@ void image_load_map(char * path)
   nbt_node * nroot = nbt_parse_file(nbtf);
   nbt_node * ndata = nbt_find_by_name(nroot, "data");
   nbt_node * ncolors = nbt_find_by_name(ndata, "colors");
-	
-  memcpy(mdata, ncolors->payload.tag_byte_array.data, 128 * 128);
+  
+  memcpy(mdata[current_buffer], ncolors->payload.tag_byte_array.data, 128 * 128);
   set_image();
 	
   fclose(nbtf);
@@ -392,7 +392,10 @@ static void button_click(gpointer data)
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 			
 	  if(srecmpend(".dat", file) == 0)
-	    image_load_map(file);
+	    {
+	      add_buffer();
+	      image_load_map(file);
+	    }
 	  else if(srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
 	    {
 	      GError * err = NULL;
