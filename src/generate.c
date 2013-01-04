@@ -12,6 +12,7 @@
    along with ImageToMapX. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <stdint.h>
+#include <stdlib.h>
 #include <math.h>
 #include <gtk/gtk.h>
 #include <errno.h>
@@ -25,6 +26,16 @@ void generate_palette(unsigned char * data)
   for(i = 0; i < 128 * 128; i++)
     {
       data[i] = ((i) % 52) + 4;
+    }
+}
+
+void generate_random_noise(unsigned char * data)
+{
+  srand(time(NULL));
+  int i;
+  for(i = 0; i < 128 * 128; i++)
+    {
+      data[i] = (rand() % 52) + 4;
     }
 }
 

@@ -473,6 +473,12 @@ static void button_click(gpointer data)
       generate_palette(mdata[current_buffer]);
       set_image();
     }
+  else if(strcmp("button.random_noise", (char *)data) == 0)
+    {
+      add_buffer();
+      generate_random_noise(mdata[current_buffer]);
+      set_image();
+    }
   else if(strcmp("button.mandelbrot", (char *)data) == 0)
     {
       add_buffer();
@@ -541,7 +547,7 @@ int main(int argc, char ** argv)
   GtkWidget * sc_win, * sc_buffer;
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
-  GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item;
+  GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item, * random_noise_item;
 	
   GtkWidget * zoom_box, * zoom_button;
 	
@@ -670,6 +676,14 @@ int main(int argc, char ** argv)
   g_signal_connect_swapped(palette_item, "activate",
 			   G_CALLBACK(button_click),
 			   (gpointer)"button.palette");
+
+  //////////random_noise_item
+  random_noise_item = gtk_menu_item_new_with_label("Random Noise");
+  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), random_noise_item);
+  gtk_widget_show(random_noise_item);
+  g_signal_connect_swapped(random_noise_item, "activate",
+			   G_CALLBACK(button_click),
+			   (gpointer)"button.random_noise");
 	
   /////////generate_item
   generate_item = gtk_menu_item_new_with_label("Generate");
