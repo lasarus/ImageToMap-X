@@ -138,6 +138,9 @@ GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
   return fdata;
 }
 
+
+GtkWidget * drop_down_menu;
+
 static gboolean buffer_callback(GtkWidget * event_box, GdkEventButton * event, gpointer data)
 {
   if(event->button == 1)
@@ -147,7 +150,20 @@ static gboolean buffer_callback(GtkWidget * event_box, GdkEventButton * event, g
     }
   else if(event->button == 3)
     {
-      remove_buffer((size_t)data);
+      GtkWidget * menu, * item;
+      GdkEventButton * bevent = (GdkEventButton *)event;
+
+      menu = gtk_menu_new();
+      item = gtk_menu_item_new_with_label("Remove");
+      gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+      gtk_widget_show(item);
+      item = gtk_menu_item_new_with_label("Merge Down");
+      gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+      gtk_widget_show(item);
+
+      gtk_menu_popup (GTK_MENU(menu), NULL, NULL, NULL, NULL,
+		      bevent->button, bevent->time);
+      //remove_buffer((size_t)data);
     }
   else
     return FALSE;
