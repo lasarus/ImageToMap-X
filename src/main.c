@@ -29,6 +29,7 @@
 void set_image();
 void remove_buffer(int id);
 void update_sidepanel();
+int get_buffer_count();
 
 configvars_t * config = NULL;
 
@@ -138,8 +139,75 @@ GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
   return fdata;
 }
 
-
+int drop_down_menu_id;
 GtkWidget * drop_down_menu;
+
+static void drop_down_menu_callback(gpointer data)
+{
+  if(strcmp("drop_down_menu.remove", (char *)data) == 0)
+    {
+      remove_buffer(drop_down_menu_id);
+    }
+  else if(strcmp("drop_down_menu.merge_down", (char *)data) == 0)
+    {
+      printf("Not Implemented\n");
+    }
+  else if(strcmp("drop_down_menu.move_up", (char *)data) == 0)
+    {
+      if(drop_down_menu_id > 0)
+	{
+	  unsigned char * tmpdata = mdata[drop_down_menu_id];
+	  mdata[drop_down_menu_id] = mdata[drop_down_menu_id - 1];
+	  mdata[drop_down_menu_id - 1] = tmpdata;
+
+	  set_image();
+	}
+    }
+  else if(strcmp("drop_down_menu.move_down", (char *)data) == 0)
+    {
+      if(drop_down_menu_id < get_buffer_count())
+	{
+	  unsigned char * tmpdata = mdata[drop_down_menu_id];
+	  mdata[drop_down_menu_id] = mdata[drop_down_menu_id + 1];
+	  mdata[drop_down_menu_id + 1] = tmpdata;
+
+	  set_image();
+	}
+    }
+}
+
+void init_drop_down_menu()
+{
+  GtkWidget * item;
+  drop_down_menu = gtk_menu_new();
+  item = gtk_menu_item_new_with_label("Remove");
+  gtk_menu_shell_append(GTK_MENU_SHELL(drop_down_menu), item);
+  g_signal_connect_swapped(item, "activate",
+			   G_CALLBACK(drop_down_menu_callback),
+			   (gpointer)"drop_down_menu.remove");
+  gtk_widget_show(item);
+
+  item = gtk_menu_item_new_with_label("Merge Down");
+  gtk_menu_shell_append(GTK_MENU_SHELL(drop_down_menu), item);
+  g_signal_connect_swapped(item, "activate",
+			   G_CALLBACK(drop_down_menu_callback),
+			   (gpointer)"drop_down_menu.merge_down");
+  gtk_widget_show(item);
+
+  item = gtk_menu_item_new_with_label("Move Up");
+  gtk_menu_shell_append(GTK_MENU_SHELL(drop_down_menu), item);
+  g_signal_connect_swapped(item, "activate",
+			   G_CALLBACK(drop_down_menu_callback),
+			   (gpointer)"drop_down_menu.move_up");
+  gtk_widget_show(item);
+
+  item = gtk_menu_item_new_with_label("Move Down");
+  gtk_menu_shell_append(GTK_MENU_SHELL(drop_down_menu), item);
+  g_signal_connect_swapped(item, "activate",
+			   G_CALLBACK(drop_down_menu_callback),
+			   (gpointer)"drop_down_menu.move_down");
+  gtk_widget_show(item);
+}
 
 static gboolean buffer_callback(GtkWidget * event_box, GdkEventButton * event, gpointer data)
 {
@@ -150,20 +218,12 @@ static gboolean buffer_callback(GtkWidget * event_box, GdkEventButton * event, g
     }
   else if(event->button == 3)
     {
-      GtkWidget * menu, * item;
       GdkEventButton * bevent = (GdkEventButton *)event;
 
-      menu = gtk_menu_new();
-      item = gtk_menu_item_new_with_label("Remove");
-      gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-      gtk_widget_show(item);
-      item = gtk_menu_item_new_with_label("Merge Down");
-      gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-      gtk_widget_show(item);
+      gtk_menu_popup(GTK_MENU(drop_down_menu), NULL, NULL, NULL, NULL,
+		     bevent->button, bevent->time);
 
-      gtk_menu_popup (GTK_MENU(menu), NULL, NULL, NULL, NULL,
-		      bevent->button, bevent->time);
-      //remove_buffer((size_t)data);
+      drop_down_menu_id = (size_t)data;
     }
   else
     return FALSE;
@@ -690,7 +750,11 @@ int main(int argc, char ** argv)
   gtk_widget_show(generate_item);
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(generate_item), generate_menu);
   gtk_menu_shell_append((GtkMenuShell *)menu_bar, generate_item);
-	
+  
+
+  //drop_down_menu
+  init_drop_down_menu();
+
   //hpaned
 #ifdef GTK2
   hpaned = gtk_hpaned_new();
