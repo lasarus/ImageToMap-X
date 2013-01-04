@@ -791,7 +791,7 @@ int main(int argc, char ** argv)
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(sc_win), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
 #ifdef GTK2
   gtk_widget_set_size_request(sc_win, 128 * 4, 128 * 4);
-  gtk_window_resize(GTK_WINDOW(window), 128 * 4 + 21, 128 * 4 + 50);
+  gtk_window_resize(GTK_WINDOW(window), 128 * 4 + 200, 128 * 4 + 70);
 #else
   gtk_scrolled_window_set_min_content_width(GTK_SCROLLED_WINDOW(sc_win), 128 * 4);
   gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(sc_win), 128 * 4);
