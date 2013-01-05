@@ -152,7 +152,12 @@ static void drop_down_menu_callback(gpointer data)
     }
   else if(strcmp("drop_down_menu.merge_down", (char *)data) == 0)
     {
-      printf("Not Implemented\n");
+      if(drop_down_menu_id < get_buffer_count() - 1)
+	{
+	  merge_buffers(mdata[drop_down_menu_id], mdata[drop_down_menu_id + 1]);
+	  remove_buffer(drop_down_menu_id + 1);
+	  set_image();
+	}
     }
   else if(strcmp("drop_down_menu.move_up", (char *)data) == 0)
     {

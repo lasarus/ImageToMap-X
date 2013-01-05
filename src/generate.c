@@ -222,3 +222,13 @@ void generate_image(unsigned char * data, const char * filename, color_t * color
   g_object_unref(image);
 }
 
+void merge_buffers(unsigned char * data1, unsigned char * data2)
+{
+  int i;
+
+  for(i = 0; i < 128 * 128; i++)
+    {
+      if(data1[i] < 4)
+	data1[i] = data2[i];
+    }
+}
