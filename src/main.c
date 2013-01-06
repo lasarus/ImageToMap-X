@@ -314,7 +314,7 @@ void set_image()
 
 void image_load_map(char * path)
 {
-  FILE * nbtf = fopen(path, "rb");
+  /*FILE * nbtf = fopen(path, "rb");
   nbt_node * nroot = nbt_parse_file(nbtf);
   nbt_node * ndata = nbt_find_by_name(nroot, "data");
   nbt_node * ncolors = nbt_find_by_name(ndata, "colors");
@@ -323,7 +323,10 @@ void image_load_map(char * path)
   set_image();
 	
   fclose(nbtf);
-  nbt_free(nroot);
+  nbt_free(nroot);*/
+
+  nbt_load_map(path, mdata[current_buffer]);
+  set_image();
 }
 
 void save_map(char * path)

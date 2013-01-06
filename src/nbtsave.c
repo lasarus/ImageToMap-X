@@ -210,11 +210,8 @@ void nbt_write_raw_tag(unsigned char * data, char type, const char * name, int *
   va_end (arguments);
 }
 
-void nbt_save_map(const char * filename,
-		  char dimension, char scale,
-		  int16_t height, int16_t width,
-		  int64_t xCenter, int64_t zCenter,
-		  unsigned char * mapdata)
+void nbt_save_map(const char * filename, char dimension, char scale, int16_t height, int16_t width,
+		  int64_t xCenter, int64_t zCenter, unsigned char * mapdata)
 {
   int offset = 0;
   unsigned char data[MAPLEN];
@@ -236,6 +233,87 @@ void nbt_save_map(const char * filename,
   FILE * dest = fopen(filename, "wb");
   deflatenbt(data, MAPLEN, dest, 9);
   fclose(dest);
+}
+
+void nbt_jump_raw_string(unsigned char * data, int * offset)
+{
+  int len = 0;
+
+  len |= (data[*offset + 0] & 0xFF) << 8;
+  len |= (data[*offset + 1] & 0xFF) << 0;
+
+  *offset += 2;
+  if(len != 0)
+    printf("%.*s\n", len, data + *offset);
+  *offset += len;
+}
+
+void nbt_load_map(const char * filename, unsigned char * mapdata)
+{
+  int r = 1;
+  unsigned char * data;
+  long size;
+  int offset;
+  FILE * dest = fopen(filename, "rb");
+  data = inflatenbt(dest, &size);
+  fclose(dest);
+
+  offset = 0;
+
+  while(offset < size && r)
+    {
+      printf("0x%.2X\n", data[offset]);
+      switch(data[offset])
+	{
+	case 0x0A:
+	  offset += 1;
+	  nbt_jump_raw_string(data, &offset);
+	  printf("load compound, %i\n", offset);
+	  break;
+
+	case 0x01:
+	  offset += 1;
+	  nbt_jump_raw_string(data, &offset);
+	  offset += 1;
+	  printf("load byte, %i\n", offset);
+	  break;
+
+	case 0x02:
+	  offset += 1;
+	  nbt_jump_raw_string(data, &offset);
+	  offset += 2;
+	  printf("load short, %i\n", offset);
+	  break;
+
+	case 0x03:
+	  offset += 1;
+	  nbt_jump_raw_string(data, &offset);
+	  offset += 4;
+	  printf("load int, %i\n", offset);
+	  break;
+
+	case 0x07:
+	  offset += 1;
+	  nbt_jump_raw_string(data, &offset);
+	  offset += 4;
+	  memcpy(mapdata, &(data[offset]), 0x4000);
+	  printf("load byte array, %i\n", offset);
+	  break;
+
+	case 0x00:
+	  printf("load end tag, %i\n", offset);
+	  r = 0;
+	  break;
+
+	default:
+	  r = 0;
+	  break;
+	}
+      offset += 0;
+      printf("tag loaded\n");
+    }
+
+  free(data);
 }
 
 void save_raw_map(const char * filename, unsigned char * mapdata)
