@@ -73,95 +73,6 @@ int deflatenbt(unsigned char * source, long src_len, FILE * dest, int level)
   return Z_OK;
 }
 
-void nbt_write_raw_string(unsigned char * data, const char * str, int * offset)
-{
-  int i;
-  short len = strlen(str);
-
-  data[*offset + 0] = (len >> 8) & 0xFF;
-  data[*offset + 1] = (len >> 0) & 0xFF;
-  *offset += 2;
-  for(i = 0; i < len; i++)
-    {
-      data[*offset + i] = str[i];
-    }
-  *offset += i;
-}
-
-void nbt_write_raw_tagstart(unsigned char * data, char type, const char * name, int * offset)
-{
-  data[*offset] = type;
-  *offset += 1;
-  nbt_write_raw_string(data, name, offset);
-}
-
-void nbt_save_map(const char * filename,
-		  char dimension, char scale,
-		  int16_t height, int16_t width,
-		  int64_t xCenter, int64_t zCenter,
-		  unsigned char * mapdata)
-{
-  int offset = 0;
-  unsigned char data[MAPLEN];
-  
-  /* root compound */
-  data[offset] = 0x0A;
-  data[offset + 1] = 0x00;
-  data[offset + 2] = 0x00;
-  offset += 3;
-  /* data compound */
-  nbt_write_raw_tagstart(data, 0x0A, "data", &offset);//10
-  /* scale byte */
-  nbt_write_raw_tagstart(data, 0x01, "scale", &offset);//19
-  data[offset] = scale;
-  offset += 1;
-  /* dimension byte */
-  nbt_write_raw_tagstart(data, 0x01, "dimension", &offset);//32
-  data[offset] = dimension;
-  offset += 1;
-  /* height short */
-  nbt_write_raw_tagstart(data, 0x02, "height", &offset); //43
-  data[offset + 0] = (height >> 8) & 0xFF;
-  data[offset + 1] = (height >> 0) & 0xFF;
-  offset += 2;
-  /* width short */
-  nbt_write_raw_tagstart(data, 0x02, "width", &offset); //53
-  data[offset + 0] = (width >> 8) & 0xFF;
-  data[offset + 1] = (width >> 0) & 0xFF;
-  offset += 2;
-  /* xCenter int */
-  nbt_write_raw_tagstart(data, 0x03, "xCenter", &offset); //67
-  data[offset + 0] = (xCenter >> 24) & 0xFF;
-  data[offset + 1] = (xCenter >> 16) & 0xFF;
-  data[offset + 2] = (xCenter >> 8) & 0xFF;
-  data[offset + 3] = (xCenter >> 0) & 0xFF;
-  offset += 4;
-  /* zCenter int */
-  nbt_write_raw_tagstart(data, 0x03, "zCenter", &offset); //81
-  data[offset + 0] = (zCenter >> 24) & 0xFF;
-  data[offset + 1] = (zCenter >> 16) & 0xFF;
-  data[offset + 2] = (zCenter >> 8) & 0xFF;
-  data[offset + 3] = (zCenter >> 0) & 0xFF;
-  offset += 4;
-  /* colors byte array */
-  nbt_write_raw_tagstart(data, 0x07, "colors", &offset); // 94
-  data[offset + 0] = 0x00;
-  data[offset + 1] = 0x00;
-  data[offset + 2] = 0x40;
-  data[offset + 3] = 0x00;
-  offset += 4;
-  memcpy(data + offset, mapdata, 0x4000);
-  offset += 0x4000;
-  /* data and root end tag */
-  data[offset + 0] = 0x00;
-  data[offset + 1] = 0x00;
-  printf("offset %X\n", offset);
-  
-  FILE * dest = fopen(filename, "wb");
-  deflatenbt(data, MAPLEN, dest, 9);
-  fclose(dest);
-}
-
 unsigned char * inflatenbt(FILE * source, long * rsize)
 {
   int ret;
@@ -223,6 +134,108 @@ unsigned char * inflatenbt(FILE * source, long * rsize)
     }
   else
     return NULL;
+}
+
+void nbt_write_raw_string(unsigned char * data, const char * str, int * offset)
+{
+  int i;
+  short len = (str == NULL) ? 0 : strlen(str);
+
+  data[*offset + 0] = (len >> 8) & 0xFF;
+  data[*offset + 1] = (len >> 0) & 0xFF;
+  *offset += 2;
+  for(i = 0; i < len; i++)
+    {
+      data[*offset + i] = str[i];
+    }
+  *offset += i;
+}
+
+void nbt_write_raw_tagstart(unsigned char * data, char type, const char * name, int * offset)
+{
+  data[*offset] = type;
+  *offset += 1;
+  nbt_write_raw_string(data, name, offset);
+}
+
+void nbt_write_raw_tag(unsigned char * data, char type, const char * name, int * offset, ...)
+{
+  va_list arguments;
+  va_start(arguments, offset);
+
+  nbt_write_raw_tagstart(data, type, name, offset);
+
+  int i;
+  unsigned char * barray;
+  switch(type)
+    {
+    case 01:
+      data[*offset] = va_arg(arguments, int) & 0xFF;
+      *offset += 1;
+      break;
+
+    case 02:
+      i = va_arg(arguments, unsigned int);
+      data[*offset + 0] = (i >> 8) & 0xFF;
+      data[*offset + 1] = (i >> 0) & 0xFF;
+      *offset += 2;
+      break;
+
+    case 03:
+      i = va_arg(arguments, unsigned int);
+      data[*offset + 0] = (i >> 24) & 0xFF;
+      data[*offset + 1] = (i >> 16) & 0xFF;
+      data[*offset + 2] = (i >> 8) & 0xFF;
+      data[*offset + 3] = (i >> 0) & 0xFF;
+      *offset += 4;
+      break;
+
+    case 07:
+      i = va_arg(arguments, unsigned int);
+      barray = va_arg(arguments, unsigned char *);
+      
+      data[*offset + 0] = (i >> 24) & 0xFF;
+      data[*offset + 1] = (i >> 16) & 0xFF;
+      data[*offset + 2] = (i >> 8) & 0xFF;
+      data[*offset + 3] = (i >> 0) & 0xFF;
+      *offset += 4;
+      memcpy(data + *offset, barray, i);
+      *offset += i;
+      break;
+      
+    default:
+      break;
+    }
+
+  va_end (arguments);
+}
+
+void nbt_save_map(const char * filename,
+		  char dimension, char scale,
+		  int16_t height, int16_t width,
+		  int64_t xCenter, int64_t zCenter,
+		  unsigned char * mapdata)
+{
+  int offset = 0;
+  unsigned char data[MAPLEN];
+  
+  nbt_write_raw_tag(data, 0x0A, NULL, &offset);
+  nbt_write_raw_tag(data, 0x0A, "data", &offset);
+  nbt_write_raw_tag(data, 0x01, "scale", &offset, scale);
+  nbt_write_raw_tag(data, 0x01, "dimension", &offset, dimension);
+  nbt_write_raw_tag(data, 0x02, "height", &offset, (int)height);
+  nbt_write_raw_tag(data, 0x02, "width", &offset, (int)width);
+  nbt_write_raw_tag(data, 0x03, "xCenter", &offset, (int)xCenter);
+  nbt_write_raw_tag(data, 0x03, "zCenter", &offset, (int)zCenter);
+  nbt_write_raw_tag(data, 0x07, "colors", &offset, 0x4000, mapdata);
+  /* data and root end tag */
+  data[offset + 0] = 0x00;
+  data[offset + 1] = 0x00;
+  printf("offset %X\n", offset);
+  
+  FILE * dest = fopen(filename, "wb");
+  deflatenbt(data, MAPLEN, dest, 9);
+  fclose(dest);
 }
 
 void save_raw_map(const char * filename, unsigned char * mapdata)
