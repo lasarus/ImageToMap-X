@@ -45,7 +45,7 @@ static GtkWidget * list_vbox;
 color_t * colors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
 
-GtkWidget * selected_buffer_frame;
+GtkWidget * selected_buffer_frame = NULL;
 GtkWidget * icons[BUFFER_COUNT];
 GtkWidget * icon_event_boxes[BUFFER_COUNT];
 
@@ -263,7 +263,8 @@ void update_sidepanel()
 
 	      gdk_color_parse("red", &color);
 
-	      gtk_widget_destroy(selected_buffer_frame);
+	      if(selected_buffer_frame != NULL)
+		gtk_widget_destroy(selected_buffer_frame);
 	      selected_buffer_frame = gtk_frame_new(NULL);
 	      gtk_widget_modify_bg(selected_buffer_frame, GTK_STATE_NORMAL, &color);
 	      gtk_box_pack_start(GTK_BOX(list_vbox), selected_buffer_frame, FALSE, TRUE, 1);
