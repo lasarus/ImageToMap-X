@@ -22,7 +22,6 @@
 #include <time.h>
 
 #include "color.h"
-#include "NBT/nbt.h"
 #include "generate.h"
 #include "nbtsave.h"
 

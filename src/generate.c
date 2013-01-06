@@ -55,7 +55,7 @@ void generate_mandelbrot(unsigned char * data)
   double Re_factor = (MaxRe - MinRe) / (width - 1);
   double Im_factor = (MaxIm - MinIm) / (height - 1);
   int MaxIterations = 30;
-	
+
   int x, y;
   for(y = 0; y < height; ++y)
     {
@@ -105,7 +105,7 @@ void generate_julia(unsigned char * data, double c_im, double c_re)
   double Re_factor = (MaxRe - MinRe) / (width - 1);
   double Im_factor = (MaxIm - MinIm) / (height - 1);
   int MaxIterations = 30;
-	
+
   int y, x;
   for (y = 0; y < height; ++y)
     {
@@ -137,7 +137,7 @@ void generate_julia(unsigned char * data, double c_im, double c_re)
     }
 }
 
-color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char * pixels)
+color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char * pixels, int * alpha)
 {
   color_t color;
   guchar * p;
@@ -146,6 +146,7 @@ color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char *
   color.r = p[0];
   color.g = p[1];
   color.b = p[2];
+  *alpha = (p[3] < 0xFF / 2);
 
   return color;
 }
@@ -160,14 +161,14 @@ int closest_color(int r, int g, int b, color_t * colors)
       ndist = sqrt(pow(testr - r, 2)
 		   + pow(testg - g, 2)
 		   + pow(testb - b, 2));
-		
+
       if(ndist < closest_dist)
 	{
 	  closest_id = i;
 	  closest_dist = ndist;
 	}
     }
-	
+
   return closest_id;
 }
 
@@ -183,42 +184,45 @@ int nclosest_color(int r, int g, int b, color_t * colors)
       ndist = sqrt(pow(testr - r, 2)
 		   + pow(testg - g, 2)
 		   + pow(testb - b, 2));
-		
+
       if(ndist < closest_dist)
 	{
 	  closest_id = i;
 	  closest_dist = ndist;
 	}
     }
-	
+
   return closest_id;
 }
 
 void generate_image(unsigned char * data, const char * filename, color_t * colors, GError ** error)
 {
   GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
-	
+
   if(*error != NULL)
     return;
-	
+
   double h = gdk_pixbuf_get_height(image), w = gdk_pixbuf_get_width(image);
   double xi = w / 128., yi = h / 128.;
-	
+
   unsigned char * image_pixels = gdk_pixbuf_get_pixels(image);
-	
+
   double x, y;
-	
-  int i = 0;
+
+  int i = 0, alpha;
   for(i = 0; i < 128 * 128; i++)
     {
       x = (double)(i % 128) * xi;
       y = (double)(i / 128) * yi;
-		
-      color_t c = get_pixel_pixbuf(x, y, image, image_pixels);
-		
-      data[i] = closest_color(c.r, c.g, c.b, colors);
+
+      color_t c = get_pixel_pixbuf(x, y, image, image_pixels, &alpha);
+      
+      if(alpha)
+	data[i] = 0;
+      else
+	data[i] = closest_color(c.r, c.g, c.b, colors);
     }
-	
+
   g_object_unref(image);
 }
 
