@@ -73,26 +73,92 @@ int deflatenbt(unsigned char * source, long src_len, FILE * dest, int level)
   return Z_OK;
 }
 
+void nbt_write_raw_string(unsigned char * data, const char * str, int * offset)
+{
+  int i;
+  short len = strlen(str);
+
+  data[*offset + 0] = (len >> 8) & 0xFF;
+  data[*offset + 1] = (len >> 0) & 0xFF;
+  *offset += 2;
+  for(i = 0; i < len; i++)
+    {
+      data[*offset + i] = str[i];
+    }
+  *offset += i;
+}
+
+void nbt_write_raw_tagstart(unsigned char * data, char type, const char * name, int * offset)
+{
+  data[*offset] = type;
+  *offset += 1;
+  nbt_write_raw_string(data, name, offset);
+}
+
 void nbt_save_map(const char * filename,
 		  char dimension, char scale,
 		  int16_t height, int16_t width,
 		  int64_t xCenter, int64_t zCenter,
 		  unsigned char * mapdata)
 {
-  unsigned char databuffer[DATALEN] = {0x0A, 0x00, 0x00, 0x0A, 0x00, 0x04, 0x64, 0x61, 0x74, 0x61, 0x01, 0x00, 0x05, 0x73, 0x63, 0x61, 0x6C, 0x65, 0x03 /*byte*/, 0x01, 0x00, 0x09, 0x64, 0x69, 0x6D, 0x65, 0x6E, 0x73, 0x69, 0x6F, 0x6E, 0x00 /*byte*/, 0x02, 0x00, 0x06, 0x68, 0x65, 0x69, 0x67, 0x68, 0x74, /**/0x00, 0x80/*short*/, 0x07, 0x00, 0x06, 0x63, 0x6F, 0x6C, 0x6F, 0x72, 0x73, 0x00, 0x00, 0x40, 0x00};
-  unsigned char ensedatabuffer[ENDDATALEN] = {0x03, 0x00, 0x07, 0x78, 0x43, 0x65, 0x6E, 0x74, 0x65, 0x72, /**/0x13, 0x13, 0x13, 0x83/*int*/, 0x02, 0x00, 0x05, 0x77, 0x69, 0x64, 0x74, 0x68, /**/0x00, 0x80/*short*/, 0x03, 0x00, 0x07, 0x7A, 0x43, 0x65, 0x6E, 0x74, 0x65, 0x72, /**/0x00, 0x00, 0x00, 0x4A/*int*/, 0x00, 0x00};
-	
-  unsigned char buffer[MAPLEN];
-	
-  //databuffer[18] = scale;
-  //databuffer[31] = dimension;
-	
-  memcpy(buffer, databuffer, DATALEN);
-  memcpy(buffer + DATALEN, mapdata, 0x4000);
-  memcpy(buffer + DATALEN + 0x4000, ensedatabuffer, ENDDATALEN);
-	
+  int offset = 0;
+  unsigned char data[MAPLEN];
+  
+  /* root compound */
+  data[offset] = 0x0A;
+  data[offset + 1] = 0x00;
+  data[offset + 2] = 0x00;
+  offset += 3;
+  /* data compound */
+  nbt_write_raw_tagstart(data, 0x0A, "data", &offset);//10
+  /* scale byte */
+  nbt_write_raw_tagstart(data, 0x01, "scale", &offset);//19
+  data[offset] = scale;
+  offset += 1;
+  /* dimension byte */
+  nbt_write_raw_tagstart(data, 0x01, "dimension", &offset);//32
+  data[offset] = dimension;
+  offset += 1;
+  /* height short */
+  nbt_write_raw_tagstart(data, 0x02, "height", &offset); //43
+  data[offset + 0] = (height >> 8) & 0xFF;
+  data[offset + 1] = (height >> 0) & 0xFF;
+  offset += 2;
+  /* width short */
+  nbt_write_raw_tagstart(data, 0x02, "width", &offset); //53
+  data[offset + 0] = (width >> 8) & 0xFF;
+  data[offset + 1] = (width >> 0) & 0xFF;
+  offset += 2;
+  /* xCenter int */
+  nbt_write_raw_tagstart(data, 0x03, "xCenter", &offset); //67
+  data[offset + 0] = (xCenter >> 24) & 0xFF;
+  data[offset + 1] = (xCenter >> 16) & 0xFF;
+  data[offset + 2] = (xCenter >> 8) & 0xFF;
+  data[offset + 3] = (xCenter >> 0) & 0xFF;
+  offset += 4;
+  /* zCenter int */
+  nbt_write_raw_tagstart(data, 0x03, "zCenter", &offset); //81
+  data[offset + 0] = (zCenter >> 24) & 0xFF;
+  data[offset + 1] = (zCenter >> 16) & 0xFF;
+  data[offset + 2] = (zCenter >> 8) & 0xFF;
+  data[offset + 3] = (zCenter >> 0) & 0xFF;
+  offset += 4;
+  /* colors byte array */
+  nbt_write_raw_tagstart(data, 0x07, "colors", &offset); // 94
+  data[offset + 0] = 0x00;
+  data[offset + 1] = 0x00;
+  data[offset + 2] = 0x40;
+  data[offset + 3] = 0x00;
+  offset += 4;
+  memcpy(data + offset, mapdata, 0x4000);
+  offset += 0x4000;
+  /* data and root end tag */
+  data[offset + 0] = 0x00;
+  data[offset + 1] = 0x00;
+  printf("offset %X\n", offset);
+  
   FILE * dest = fopen(filename, "wb");
-  deflatenbt(buffer, MAPLEN, dest, 9);
+  deflatenbt(data, MAPLEN, dest, 9);
   fclose(dest);
 }
 
@@ -103,10 +169,10 @@ unsigned char * inflatenbt(FILE * source, long * rsize)
   z_stream strm;
   unsigned char in[CHUNK];
   unsigned char out[CHUNK];
-	
+  
   unsigned char * inflated = NULL;
   long size = 0;
-
+  
   strm.zalloc = Z_NULL;
   strm.zfree = Z_NULL;
   strm.opaque = Z_NULL;
@@ -115,7 +181,7 @@ unsigned char * inflatenbt(FILE * source, long * rsize)
   ret = inflateInit2(&strm, 16 + MAX_WBITS);
   if (ret != Z_OK)
     return NULL;
-	
+  
   do
     {
       strm.avail_in = fread(in, 1, CHUNK, source);

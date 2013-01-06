@@ -328,6 +328,7 @@ void image_load_map(char * path)
 void save_map(char * path)
 {
   nbt_save_map(path, 0, 3, 128, 128, 13371337, -13371337, mdata[current_buffer]);
+  printf("saved map\n");
 }
 
 static gboolean kill_window(GtkWidget * widget, GdkEvent * event, gpointer data)
@@ -427,7 +428,7 @@ static void button_click(gpointer data)
     }
   else if(strcmp("button.save", (char *)data) == 0)
     {
-      if(mdata == NULL)
+      if(mdata[current_buffer] == NULL)
 	return;
 			
       GtkWidget * dialog;
@@ -450,6 +451,7 @@ static void button_click(gpointer data)
 	    save_map(file);
 	}
       gtk_widget_destroy(dialog);
+      printf("bracket cleared\n");
     }
   else if(strcmp("button.exp_img", (char *)data) == 0)
     {
