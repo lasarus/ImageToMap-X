@@ -228,7 +228,6 @@ void nbt_save_map(const char * filename, char dimension, char scale, int16_t hei
   /* data and root end tag */
   data[offset + 0] = 0x00;
   data[offset + 1] = 0x00;
-  printf("offset %X\n", offset);
   
   FILE * dest = fopen(filename, "wb");
   deflatenbt(data, MAPLEN, dest, 9);
@@ -243,8 +242,6 @@ void nbt_jump_raw_string(unsigned char * data, int * offset)
   len |= (data[*offset + 1] & 0xFF) << 0;
 
   *offset += 2;
-  if(len != 0)
-    printf("%.*s\n", len, data + *offset);
   *offset += len;
 }
 
@@ -262,34 +259,29 @@ void nbt_load_map(const char * filename, unsigned char * mapdata)
 
   while(offset < size && r)
     {
-      printf("0x%.2X\n", data[offset]);
       switch(data[offset])
 	{
 	case 0x0A:
 	  offset += 1;
 	  nbt_jump_raw_string(data, &offset);
-	  printf("load compound, %i\n", offset);
 	  break;
 
 	case 0x01:
 	  offset += 1;
 	  nbt_jump_raw_string(data, &offset);
 	  offset += 1;
-	  printf("load byte, %i\n", offset);
 	  break;
 
 	case 0x02:
 	  offset += 1;
 	  nbt_jump_raw_string(data, &offset);
 	  offset += 2;
-	  printf("load short, %i\n", offset);
 	  break;
 
 	case 0x03:
 	  offset += 1;
 	  nbt_jump_raw_string(data, &offset);
 	  offset += 4;
-	  printf("load int, %i\n", offset);
 	  break;
 
 	case 0x07:
@@ -297,11 +289,9 @@ void nbt_load_map(const char * filename, unsigned char * mapdata)
 	  nbt_jump_raw_string(data, &offset);
 	  offset += 4;
 	  memcpy(mapdata, &(data[offset]), 0x4000);
-	  printf("load byte array, %i\n", offset);
 	  break;
 
 	case 0x00:
-	  printf("load end tag, %i\n", offset);
 	  r = 0;
 	  break;
 
@@ -310,7 +300,6 @@ void nbt_load_map(const char * filename, unsigned char * mapdata)
 	  break;
 	}
       offset += 0;
-      printf("tag loaded\n");
     }
 
   free(data);
