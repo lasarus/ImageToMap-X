@@ -1,5 +1,5 @@
 Dependencies:
-gcc, zlib, gtk (, cNBT included in project (src/NBT/*))
+gcc, zlib, gtk+ (2 or 3)
 
 The currently supported platforms are: linux and windows (mac is barely supported)
 
