@@ -22,4 +22,4 @@ $(OBJ)%.o: %.c
 
 $(TARGET): $(OBJECTS)
 	@mkdir -p $(BIN)
-	$(CC) $(LFLAGS) $(OBJECTS) -o $(TARGET)
+	$(CC) $(LFLAGS) $(OBJECTS) -o $(TARGET) -s

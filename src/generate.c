@@ -146,7 +146,9 @@ color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char *
   color.r = p[0];
   color.g = p[1];
   color.b = p[2];
-  *alpha = (p[3] < 0xFF / 2);
+
+  if(alpha != NULL)
+    *alpha = (p[3] == 0);
 
   return color;
 }
@@ -195,6 +197,28 @@ int nclosest_color(int r, int g, int b, color_t * colors)
   return closest_id;
 }
 
+color_t * scale_image(GdkPixbuf * image)
+{
+  double x, y;
+  int i;
+  double h = gdk_pixbuf_get_height(image), w = gdk_pixbuf_get_width(image);
+  double xi = w / 128., yi = h / 128.;
+  color_t * scaled_image = malloc(128 * 128 * sizeof(color_t));
+  unsigned char * image_pixels = gdk_pixbuf_get_pixels(image);
+
+  for(i = 0; i < 128 * 128; i++)
+    {
+      x = (double)(i % 128) * xi;
+      y = (double)(i / 128) * yi;
+
+      color_t c = get_pixel_pixbuf(x, y, image, image_pixels, NULL);
+
+      scaled_image[i] = c;
+    }
+
+  return scaled_image;
+}
+
 void generate_image(unsigned char * data, const char * filename, color_t * colors, GError ** error)
 {
   GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
@@ -223,6 +247,73 @@ void generate_image(unsigned char * data, const char * filename, color_t * color
 	data[i] = closest_color(c.r, c.g, c.b, colors);
     }
 
+  g_object_unref(image);
+}
+
+void add_without_overflow(unsigned char * i, int j)
+{
+  if(*i + j < 256 && *i + j >= 0)
+    *i += j;
+  else if(*i + j >= 256)
+    *i = 0xFF;
+  else if(*i + j < 0)
+    *i = 0;
+}
+
+void generate_image_dithered(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+{
+  GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
+
+  if(*error != NULL)
+    return;
+
+  color_t * image_scaled = scale_image(image);
+
+  int x, y, i;
+
+  for(x = 0; x < 128; x++)
+    for(y = 0; y < 128; y++)
+      {
+	i = x + y * 128;
+	double re, ge, be;
+
+	color_t c = image_scaled[i];
+	data[i] = closest_color(c.r, c.g, c.b, colors);
+	color_t qc = colors[data[i]];
+	re = (c.r - qc.r) / 16.;
+	ge = (c.g - qc.g) / 16.;
+	be = (c.b - qc.b) / 16.;
+	
+	if(x != 127)
+	  {
+	    add_without_overflow(&(image_scaled[i + 1].r), (int)(re * 7));
+	    add_without_overflow(&(image_scaled[i + 1].g), (int)(ge * 7));
+	    add_without_overflow(&(image_scaled[i + 1].b), (int)(be * 7));
+	  }
+
+	if(y != 127)
+	  {
+	    if(x != 0)
+	      {
+		add_without_overflow(&(image_scaled[i + 127].r), (int)(re * 3));
+		add_without_overflow(&(image_scaled[i + 127].g), (int)(ge * 3));
+		add_without_overflow(&(image_scaled[i + 127].b), (int)(be * 3));
+	      }
+
+	    add_without_overflow(&(image_scaled[i + 128].r), (int)(re * 5));
+	    add_without_overflow(&(image_scaled[i + 128].g), (int)(ge * 5));
+	    add_without_overflow(&(image_scaled[i + 128].b), (int)(be * 5));
+
+	    if(x != 127)
+	      {
+		add_without_overflow(&(image_scaled[i + 128].r), (int)(re * 1));
+		add_without_overflow(&(image_scaled[i + 128].g), (int)(ge * 1));
+		add_without_overflow(&(image_scaled[i + 128].b), (int)(be * 1));
+	      }
+	  }
+      }
+
+  free(image_scaled);
   g_object_unref(image);
 }
 

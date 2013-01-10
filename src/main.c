@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <assert.h>
 #include <errno.h>
 #include <gtk/gtk.h>
@@ -40,6 +41,8 @@ int current_buffer = -1;
 static GdkPixbuf * dimage;
 static GtkWidget * image;
 static GtkWidget * list_vbox;
+
+static GtkWidget * FSD_checkbox;
 
 color_t * colors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
@@ -313,17 +316,6 @@ void set_image()
 
 void image_load_map(char * path)
 {
-  /*FILE * nbtf = fopen(path, "rb");
-  nbt_node * nroot = nbt_parse_file(nbtf);
-  nbt_node * ndata = nbt_find_by_name(nroot, "data");
-  nbt_node * ncolors = nbt_find_by_name(ndata, "colors");
-  
-  memcpy(mdata[current_buffer], ncolors->payload.tag_byte_array.data, 128 * 128);
-  set_image();
-	
-  fclose(nbtf);
-  nbt_free(nroot);*/
-
   nbt_load_map(path, mdata[current_buffer]);
   set_image();
 }
@@ -405,11 +397,14 @@ static void button_click(gpointer data)
 	      add_buffer();
 	      image_load_map(file);
 	    }
-	  else if(srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
+	  else if(srecmpend(".bmp", file) == 0 || srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
 	    {
 	      GError * err = NULL;
 	      add_buffer();
-	      generate_image(mdata[current_buffer], file, colors, &err);
+	      if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
+		generate_image_dithered(mdata[current_buffer], file, colors, &err);
+	      else
+		generate_image(mdata[current_buffer], file, colors, &err);
 	      if(err != NULL)
 		{
 		  information("Error while loading image file!");
@@ -623,6 +618,7 @@ int main(int argc, char ** argv)
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
   GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item, * random_noise_item;
+  GtkWidget * settings_menu, * settings_item;
 	
   GtkWidget * zoom_box, * zoom_button;
 	
@@ -765,8 +761,21 @@ int main(int argc, char ** argv)
   gtk_widget_show(generate_item);
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(generate_item), generate_menu);
   gtk_menu_shell_append((GtkMenuShell *)menu_bar, generate_item);
-  
 
+  ////////settings_menu
+  settings_menu = gtk_menu_new();
+  
+  ////////settings_item
+  settings_item = gtk_menu_item_new_with_label("Settings");
+  gtk_widget_show(settings_item);
+  gtk_menu_item_set_submenu(GTK_MENU_ITEM(settings_item), settings_menu);
+  gtk_menu_shell_append((GtkMenuShell *)menu_bar, settings_item);
+
+  //////////FSD_checkbox
+  FSD_checkbox = gtk_check_menu_item_new_with_label("Floyd–Steinberg dithering");
+  gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), FSD_checkbox);
+  gtk_widget_show(FSD_checkbox);
+  
   //drop_down_menu
   init_drop_down_menu();
 
