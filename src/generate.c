@@ -148,7 +148,7 @@ color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char *
   color.b = p[2];
 
   if(alpha != NULL)
-    *alpha = (p[3] < 0xFF / 2);
+    *alpha = (p[3] == 0);
 
   return color;
 }
