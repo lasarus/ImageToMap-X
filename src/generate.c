@@ -219,13 +219,8 @@ color_t * scale_image(GdkPixbuf * image)
   return scaled_image;
 }
 
-void generate_image(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+void generate_image_pixbuf(unsigned char * data, GdkPixbuf * image, color_t * colors)
 {
-  GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
-
-  if(*error != NULL)
-    return;
-
   double h = gdk_pixbuf_get_height(image), w = gdk_pixbuf_get_width(image);
   double xi = w / 128., yi = h / 128.;
 
@@ -246,6 +241,16 @@ void generate_image(unsigned char * data, const char * filename, color_t * color
       else
 	data[i] = closest_color(c.r, c.g, c.b, colors);
     }
+}
+
+void generate_image(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+{
+  GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
+
+  if(*error != NULL)
+    return;
+
+  generate_image_pixbuf(data, image, colors);
 
   g_object_unref(image);
 }
@@ -260,13 +265,8 @@ void add_without_overflow(unsigned char * i, int j)
     *i = 0;
 }
 
-void generate_image_dithered(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+void generate_image_dithered_pixbuf(unsigned char * data, GdkPixbuf * image, color_t * colors)
 {
-  GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
-
-  if(*error != NULL)
-    return;
-
   color_t * image_scaled = scale_image(image);
 
   int x, y, i;
@@ -314,6 +314,16 @@ void generate_image_dithered(unsigned char * data, const char * filename, color_
       }
 
   free(image_scaled);
+}
+
+void generate_image_dithered(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+{
+  GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
+
+  if(*error != NULL)
+    return;
+
+  generate_image_dithered_pixbuf(data, image, colors);
   g_object_unref(image);
 }
 

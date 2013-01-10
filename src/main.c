@@ -32,6 +32,7 @@ void set_image();
 void remove_buffer(int id);
 void update_sidepanel();
 int get_buffer_count();
+void add_buffer();
 
 configvars_t * config = NULL;
 
@@ -314,6 +315,19 @@ void set_image()
   update_sidepanel();
 }
 
+static void clipboard_callback(GtkClipboard * clipboard, GdkPixbuf * pixbuf, gpointer data)
+{
+  if(pixbuf == NULL)
+    return;
+
+  add_buffer();
+  if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
+    generate_image_pixbuf(mdata[current_buffer], pixbuf, colors);
+  else
+    generate_image_dithered_pixbuf(mdata[current_buffer], pixbuf, colors);
+  set_image();
+}
+
 void image_load_map(char * path)
 {
   nbt_load_map(path, mdata[current_buffer]);
@@ -561,6 +575,13 @@ static void button_click(gpointer data)
       generate_julia(mdata[current_buffer], 0.5, 0.5);
       set_image();
     }
+  else if(strcmp("button.from_clipboard", (char *)data) == 0)
+    {
+      GtkClipboard * clipboard;
+      clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
+
+      gtk_clipboard_request_image(clipboard, clipboard_callback, NULL);
+    }
   else
     printf("Unhandeled button press: %s\n", (char *)data);
 }
@@ -617,7 +638,7 @@ int main(int argc, char ** argv)
   GtkWidget * sc_win, * sc_buffer;
   GtkWidget * menu_bar;
   GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
-  GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item, * random_noise_item;
+  GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item, * random_noise_item, * from_clipboard_item;
   GtkWidget * settings_menu, * settings_item;
 	
   GtkWidget * zoom_box, * zoom_button;
@@ -755,6 +776,14 @@ int main(int argc, char ** argv)
   g_signal_connect_swapped(random_noise_item, "activate",
 			   G_CALLBACK(button_click),
 			   (gpointer)"button.random_noise");
+
+  //////////from_clipboard_item
+  from_clipboard_item = gtk_menu_item_new_with_label("From Clipboard");
+  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), from_clipboard_item);
+  gtk_widget_show(from_clipboard_item);
+  g_signal_connect_swapped(from_clipboard_item, "activate",
+			   G_CALLBACK(button_click),
+			   (gpointer)"button.from_clipboard");
 	
   /////////generate_item
   generate_item = gtk_menu_item_new_with_label("Generate");
