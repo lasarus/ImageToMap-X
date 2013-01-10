@@ -322,9 +322,9 @@ static void clipboard_callback(GtkClipboard * clipboard, GdkPixbuf * pixbuf, gpo
 
   add_buffer();
   if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-    generate_image_pixbuf(mdata[current_buffer], pixbuf, colors);
-  else
     generate_image_dithered_pixbuf(mdata[current_buffer], pixbuf, colors);
+  else
+    generate_image_pixbuf(mdata[current_buffer], pixbuf, colors);
   set_image();
 }
 
