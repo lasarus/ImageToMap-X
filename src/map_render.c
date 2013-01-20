@@ -54,7 +54,7 @@ int get_block_baseid(int id)
       baseid = 10;
       break;
 
-    case 1: case 4: 
+    case 1: case 4: case 109: case 98:
     case 7:  case 14: case 15: case 16: case 21: case 22: case 23: 
     case 24: case 29: case 33: case 34: case 36: case 43: case 44: 
     case 45: case 48: case 49: case 52: case 56: case 61: case 67: 
@@ -69,7 +69,7 @@ int get_block_baseid(int id)
 
     case 5: case 17: case 25: case 47: case 53: case 54: case 58: 
     case 63: case 64: case 68: case 72: case 84: case 85: case 95: 
-    case 96: case 99: case 100: case 107: 
+    case 96: case 99: case 100: case 107: case 126: 
       baseid = 13;
       break;
 
@@ -161,7 +161,7 @@ void render_map(block_info_t * blocks, unsigned char * data, int scale)
 	if(get_block_h_info(blocks, scale, i, j - 1) >
 	   get_block_h_info(blocks, scale, i, j))
 	  shadow = 0;
-        else if(get_block_h_info(blocks, scale, i, j) >
+        else if(get_block_h_info(blocks, scale, i, j - 1) <
 	   get_block_h_info(blocks, scale, i, j))
 	   shadow = 2;
 
