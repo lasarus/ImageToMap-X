@@ -21,10 +21,12 @@
 #include <gtk/gtk.h>
 #include <string.h>
 #include <time.h>
+#include <math.h>
 
 #include "color.h"
 #include "generate.h"
 #include "nbtsave.h"
+#include "map_render.h"
 
 #define BUFFER_COUNT 256
 
@@ -582,6 +584,51 @@ static void button_click(gpointer data)
 
       gtk_clipboard_request_image(clipboard, clipboard_callback, NULL);
     }
+  else if(strcmp("button.test_item", (char *)data) == 0)
+    {
+      GtkWidget * dialog = gtk_dialog_new_with_buttons("Render World Map",
+						       GTK_WINDOW(window),
+						       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+						       GTK_STOCK_OK,
+						       GTK_RESPONSE_ACCEPT,
+						       GTK_STOCK_CANCEL,
+						       GTK_RESPONSE_REJECT, NULL);
+
+      GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+      GtkWidget * scale_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(scale_entry), "3");
+      gtk_container_add(GTK_CONTAINER(content_area), scale_entry);
+
+      GtkWidget * xpos_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(xpos_entry), "0");
+      gtk_container_add(GTK_CONTAINER(content_area), xpos_entry);
+
+      GtkWidget * zpos_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(zpos_entry), "0");
+      gtk_container_add(GTK_CONTAINER(content_area), zpos_entry);
+
+      GtkWidget * directory_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(directory_entry), "/home/lucas/.minecraft/saves/ITMX - World Loading/region");
+      gtk_container_add(GTK_CONTAINER(content_area), directory_entry);
+
+      gtk_widget_show_all(dialog);
+
+      if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+	  int scale = atoi((char *)gtk_entry_get_text(GTK_ENTRY(scale_entry)));
+	  char * path = (char *)gtk_entry_get_text(GTK_ENTRY(directory_entry));
+	  int x = atoi((char *)gtk_entry_get_text(GTK_ENTRY(xpos_entry)));
+	  int z = atoi((char *)gtk_entry_get_text(GTK_ENTRY(zpos_entry)));
+	  int rs = pow(2, scale) * 128;
+	  block_info_t * blocks = read_region_files(path, x - (rs / 2), z - (rs / 2),
+						    rs, rs);
+	  add_buffer();
+	  render_map(blocks, mdata[current_buffer], scale);
+	  free(blocks);
+	  set_image();
+	}
+      gtk_widget_destroy(dialog);
+    }
   else
     printf("Unhandeled button press: %s\n", (char *)data);
 }
@@ -637,7 +684,7 @@ int main(int argc, char ** argv)
   GtkWidget * hpaned;
   GtkWidget * sc_win, * sc_buffer;
   GtkWidget * menu_bar;
-  GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item;
+  GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item, * test_item;
   GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item, * random_noise_item, * from_clipboard_item;
   GtkWidget * settings_menu, * settings_item;
 	
@@ -673,7 +720,7 @@ int main(int argc, char ** argv)
 	
   //init gtk
   gtk_init(&argc, &argv);
-	
+
   //window
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(window), "ImageToMap X v" VERSION_NUMBER);
@@ -727,6 +774,14 @@ int main(int argc, char ** argv)
   g_signal_connect_swapped(exp_img_item, "activate",
 			   G_CALLBACK (button_click),
 			   (gpointer) "button.exp_img");
+  
+  //////////test_item
+  test_item = gtk_menu_item_new_with_label("Test");
+  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), test_item);
+  gtk_widget_show(test_item);
+  g_signal_connect_swapped(test_item, "activate",
+			   G_CALLBACK (button_click),
+			   (gpointer) "button.test_item");
 	
   //////////quit_item
   quit_item = gtk_menu_item_new_with_label("Quit");
