@@ -23,7 +23,7 @@
 #include <time.h>
 #include <math.h>
 
-#include "color.h"
+#include "data_structures.h"
 #include "generate.h"
 #include "nbtsave.h"
 #include "map_render.h"
@@ -55,6 +55,7 @@ static GtkWidget * FSD_checkbox;
 
 color_t * colors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
+map_data_t mdata_info[BUFFER_COUNT];
 
 GtkWidget * selected_buffer_frame = NULL;
 GtkWidget * icons[BUFFER_COUNT];
@@ -192,6 +193,51 @@ static void drop_down_menu_callback(gpointer data)
 	  set_image();
 	}
     }
+  else if(strcmp("drop_down_menu.edit_map_data", (char *)data) == 0)
+    {
+      char buffer[256];
+      GtkWidget * dialog = gtk_dialog_new_with_buttons("Edit Map Data",
+						       GTK_WINDOW(window),
+						       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+						       GTK_STOCK_OK,
+						       GTK_RESPONSE_ACCEPT,
+						       GTK_STOCK_CANCEL,
+						       GTK_RESPONSE_REJECT, NULL);
+
+
+      GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+      
+      sprintf(buffer, "%i", mdata_info[drop_down_menu_id].scale);
+      GtkWidget * scale_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(scale_entry), buffer);
+      gtk_container_add(GTK_CONTAINER(content_area), scale_entry);
+
+      sprintf(buffer, "%i", mdata_info[drop_down_menu_id].xpos);
+      GtkWidget * xpos_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(xpos_entry), buffer);
+      gtk_container_add(GTK_CONTAINER(content_area), xpos_entry);
+
+      sprintf(buffer, "%i", mdata_info[drop_down_menu_id].zpos);
+      GtkWidget * zpos_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(zpos_entry), buffer);
+      gtk_container_add(GTK_CONTAINER(content_area), zpos_entry);
+
+      sprintf(buffer, "%i", mdata_info[drop_down_menu_id].dimension);
+      GtkWidget * dimension_entry = gtk_entry_new();
+      gtk_entry_set_text(GTK_ENTRY(dimension_entry), buffer);
+      gtk_container_add(GTK_CONTAINER(content_area), dimension_entry);
+
+      gtk_widget_show_all(dialog);
+
+      if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+	  mdata_info[drop_down_menu_id].scale = atoi((char *)gtk_entry_get_text(GTK_ENTRY(scale_entry)));
+	  mdata_info[drop_down_menu_id].xpos = atoi((char *)gtk_entry_get_text(GTK_ENTRY(xpos_entry)));
+	  mdata_info[drop_down_menu_id].zpos = atoi((char *)gtk_entry_get_text(GTK_ENTRY(zpos_entry)));
+	  mdata_info[drop_down_menu_id].dimension = atoi((char *)gtk_entry_get_text(GTK_ENTRY(dimension_entry)));
+	}
+      gtk_widget_destroy(dialog);
+    }
 }
 
 void init_drop_down_menu()
@@ -224,6 +270,12 @@ void init_drop_down_menu()
   g_signal_connect_swapped(item, "activate",
 			   G_CALLBACK(drop_down_menu_callback),
 			   (gpointer)"drop_down_menu.move_down");
+
+  item = gtk_menu_item_new_with_label("Edit Map Data");
+  gtk_menu_shell_append(GTK_MENU_SHELL(drop_down_menu), item);
+  g_signal_connect_swapped(item, "activate",
+			   G_CALLBACK(drop_down_menu_callback),
+			   (gpointer)"drop_down_menu.edit_map_data");
   gtk_widget_show(item);
 }
 
@@ -344,8 +396,8 @@ void image_load_map(char * path)
 
 void save_map(char * path)
 {
-  nbt_save_map(path, 0, 3, 128, 128, 13371337, -13371337, mdata[current_buffer]);
-  printf("saved map\n");
+  nbt_save_map(path, mdata_info[current_buffer].dimension, mdata_info[current_buffer].scale,
+	       128, 128, mdata_info[current_buffer].xpos, mdata_info[current_buffer].zpos, mdata[current_buffer]);
 }
 
 static gboolean kill_window(GtkWidget * widget, GdkEvent * event, gpointer data)
@@ -384,17 +436,25 @@ void add_buffer()
 {
   current_buffer = get_buffer_count();
   mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
+  mdata_info[current_buffer].xpos = 13371337;
+  mdata_info[current_buffer].zpos = -13371337;
+  mdata_info[current_buffer].scale = 3;
+  mdata_info[current_buffer].dimension = 0;
 }
+
 
 void remove_buffer(int id)
 {
   if(get_buffer_count() == 1)
     return;
   free(mdata[id]);
-  memmove(&(mdata[id]), &(mdata[id + 1]), BUFFER_COUNT - id - 2);
+  memmove(&(mdata[id]), &(mdata[id + 1]), (BUFFER_COUNT - id - 2) * sizeof(unsigned char *));
   mdata[BUFFER_COUNT - 1] = NULL;
   if(mdata[current_buffer] == NULL)
     current_buffer--;
+
+  memmove(&(mdata_info[id]), &(mdata_info[id + 1]), (BUFFER_COUNT - id - 2) * sizeof(map_data_t));
+  memset(&(mdata_info[BUFFER_COUNT - 1]), 0, sizeof(map_data_t));
   set_image();
 }
 
@@ -631,6 +691,11 @@ static void button_click(gpointer data)
 	  add_buffer();
 	  render_map(blocks, mdata[current_buffer], scale);
 	  free(blocks);
+
+	  mdata_info[current_buffer].scale = scale;
+	  mdata_info[current_buffer].xpos = x;
+	  mdata_info[current_buffer].zpos = z;
+	  mdata_info[current_buffer].dimension = 0;
 	  set_image();
 	}
       gtk_widget_destroy(dialog);

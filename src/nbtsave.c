@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <gtk/gtk.h>
 
-#include "color.h"
+#include "data_structures.h"
 #include "nbtsave.h"
 
 #define DEBUG_MESSAGE printf("Debug Message line %d file %s function %s\n", __LINE__, __FILE__, __FUNCTION__)

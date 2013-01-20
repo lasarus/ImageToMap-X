@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <math.h>
 
-#include "color.h"
+#include "data_structures.h"
 #include "nbtsave.h"
 
 int get_block_baseid(int id)

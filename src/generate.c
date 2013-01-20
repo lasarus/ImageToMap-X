@@ -17,7 +17,7 @@
 #include <gtk/gtk.h>
 #include <errno.h>
 
-#include "color.h"
+#include "data_structures.h"
 #include "generate.h"
 
 void generate_palette(unsigned char * data)
