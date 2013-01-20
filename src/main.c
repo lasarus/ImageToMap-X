@@ -28,7 +28,7 @@
 #include "nbtsave.h"
 #include "map_render.h"
 
-#ifndef OS_LINUX
+#ifdef OS_LINUX
 #define MINECRAFT_PATH "/home/<user>/.minecraft/saves/<world name>/region"
 #else
 #define MINECRAFT_PATH "<path to .minecraft>/.minecraft/saves/<world name>/region"
