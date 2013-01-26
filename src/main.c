@@ -36,6 +36,23 @@
 
 #define BUFFER_COUNT 256
 
+enum
+  {
+    ITEM_SIGNAL_OPEN,
+    ITEM_SIGNAL_SAVE,
+    ITEM_SIGNAL_SAVE_RM,
+    ITEM_SIGNAL_EXPORT_IMAGE,
+    ITEM_SIGNAL_WORLD_RENDER_ITEM,
+
+    ITEM_SIGNAL_GENERATE_MANDELBROT,
+    ITEM_SIGNAL_GENERATE_JULIA,
+    ITEM_SIGNAL_GENERATE_PALETTE,
+    ITEM_SIGNAL_GENERATE_RANDOM_NOISE,
+    ITEM_SIGNAL_GENERATE_FROM_CLIPBOARD,
+
+    ITEM_SIGNAL_QUIT,
+  };
+
 void set_image();
 void remove_buffer(int id);
 void update_sidepanel();
@@ -323,42 +340,42 @@ void update_sidepanel()
 	  if(i == current_buffer)
 	    {
 	      GdkColor color;
-
+	      
 	      gdk_color_parse("red", &color);
-
+	      
 	      if(selected_buffer_frame != NULL)
 		gtk_widget_destroy(selected_buffer_frame);
 	      selected_buffer_frame = gtk_frame_new(NULL);
 	      gtk_widget_modify_bg(selected_buffer_frame, GTK_STATE_NORMAL, &color);
 	      gtk_box_pack_start(GTK_BOX(list_vbox), selected_buffer_frame, FALSE, TRUE, 1);
-
+	      
 	      icons[i] = gtk_image_new();
 	      icon_event_boxes[i] = gtk_event_box_new();
-
+	      
 	      gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
-
+	      
 	      gtk_container_add(GTK_CONTAINER(selected_buffer_frame), icon_event_boxes[i]);
 	      gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
-
+	      
 	      gtk_widget_show(icons[i]);
 	      gtk_widget_show(icon_event_boxes[i]);
 	      gtk_widget_show(selected_buffer_frame);
-
+	      
 	      g_signal_connect(G_OBJECT(icon_event_boxes[i]), "button_press_event", G_CALLBACK(buffer_callback), (gpointer *)(size_t)i);
 	    }
 	  else
 	    {
 	      icons[i] = gtk_image_new();
 	      icon_event_boxes[i] = gtk_event_box_new();
-
+	      
 	      gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
-
+	      
 	      gtk_box_pack_start(GTK_BOX(list_vbox), icon_event_boxes[i], FALSE, TRUE, 2);
 	      gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
-
+	      
 	      gtk_widget_show(icons[i]);
 	      gtk_widget_show(icon_event_boxes[i]);
-
+	      
 	      g_signal_connect(G_OBJECT(icon_event_boxes[i]), "button_press_event", G_CALLBACK(buffer_callback), (gpointer *)(size_t)i);
 	    }
 	}
@@ -371,7 +388,7 @@ void set_image()
   g_object_unref(dimage);
   dimage = fdata;
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), fdata);
-
+  
   update_sidepanel();
 }
 
@@ -379,7 +396,7 @@ static void clipboard_callback(GtkClipboard * clipboard, GdkPixbuf * pixbuf, gpo
 {
   if(pixbuf == NULL)
     return;
-
+  
   add_buffer();
   if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
     generate_image_dithered_pixbuf(mdata[current_buffer], pixbuf, colors);
@@ -410,12 +427,12 @@ int srecmpend(char * end, char * str)
 {
   int elen = strlen(end);
   int slen = strlen(str);
-	
+  
   if(slen - elen < 0)
     return -1;
-	
+  
   str += slen - elen;
-	
+  
   return strcmp(end, str);
 }
 
@@ -452,7 +469,7 @@ void remove_buffer(int id)
   mdata[BUFFER_COUNT - 1] = NULL;
   if(mdata[current_buffer] == NULL)
     current_buffer--;
-
+  
   memmove(&(mdata_info[id]), &(mdata_info[id + 1]), (BUFFER_COUNT - id - 2) * sizeof(map_data_t));
   memset(&(mdata_info[BUFFER_COUNT - 1]), 0, sizeof(map_data_t));
   set_image();
@@ -460,7 +477,7 @@ void remove_buffer(int id)
 
 static void button_click(gpointer data)
 {
-  if(strcmp("button.open", (char *)data) == 0)
+  if((size_t)data == ITEM_SIGNAL_OPEN)
     {
       GtkWidget * dialog;
       dialog = gtk_file_chooser_dialog_new("Open file",
@@ -469,11 +486,11 @@ static void button_click(gpointer data)
 					   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 					   GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
 					   NULL);
-		
+      
       if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-			
+	  
 	  if(srecmpend(".dat", file) == 0)
 	    {
 	      add_buffer();
@@ -506,23 +523,23 @@ static void button_click(gpointer data)
 	}
       gtk_widget_destroy(dialog);
     }
-  else if(strcmp("button.save", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_SAVE)
     {
       if(mdata[current_buffer] == NULL)
 	return;
-			
+      
       GtkWidget * dialog;
-		
+      
       dialog = gtk_file_chooser_dialog_new ("Save Map",
 					    GTK_WINDOW(window),
 					    GTK_FILE_CHOOSER_ACTION_SAVE,
 					    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 					    GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					    NULL);
-		
+      
       gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
       gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), "map_0.dat");
-		
+      
       if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
@@ -533,29 +550,28 @@ static void button_click(gpointer data)
       gtk_widget_destroy(dialog);
       printf("bracket cleared\n");
     }
-  else if(strcmp("button.exp_img", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_EXPORT_IMAGE)
     {
       if(mdata[current_buffer] == NULL)
 	return;
-			
+      
       GtkWidget * dialog;
-		
+      
       dialog = gtk_file_chooser_dialog_new ("Export Image of Map",
 					    GTK_WINDOW(window),
 					    GTK_FILE_CHOOSER_ACTION_SAVE,
 					    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 					    GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					    NULL);
-		
+      
       gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
       gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), "map.png");
-		
+      
       if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	  printf("%s\n", file);
-			
-			
+	  
 	  unsigned char * data = malloc(128 * 128 * 3);
 	  int i;
 	  for(i = 0; i < 128 * 128; i++)
@@ -576,12 +592,12 @@ static void button_click(gpointer data)
 		  data[i * 3 + 2] = ((x + (y % 2)) % 2) ? 0xFF : 0xAA;
 		}
 	    }
-			
+	  
 	  GdkPixbuf * spixbuf = image_from_data(data, 0);
 	  free(data);
-			
+	  
 	  GError * err = NULL;
-			
+	  
 	  gdk_pixbuf_save(spixbuf, file, "png", &err, "compression", "9", NULL);
 	  if (err != NULL)
 	    {
@@ -589,28 +605,28 @@ static void button_click(gpointer data)
 	      printf("Error while saving: %s\n", err->message);
 	      g_error_free(err);
 	    }
-			
+	  
 	  g_object_unref(spixbuf);
 	}
       gtk_widget_destroy(dialog);
     }
-  else if(strcmp("button.save_rm", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_SAVE_RM)
     {
       if(mdata == NULL)
 	return;
-			
+      
       GtkWidget * dialog;
-		
+      
       dialog = gtk_file_chooser_dialog_new("Save Map",
 					   GTK_WINDOW(window),
 					   GTK_FILE_CHOOSER_ACTION_SAVE,
 					   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
 					   GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					   NULL);
-		
+      
       gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER (dialog), TRUE);
       gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), "map.imtm");
-		
+      
       if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
 	{
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
@@ -619,38 +635,38 @@ static void button_click(gpointer data)
 	}
       gtk_widget_destroy(dialog);
     }
-  else if(strcmp("button.palette", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_GENERATE_PALETTE)
     {
       add_buffer();
       generate_palette(mdata[current_buffer]);
       set_image();
     }
-  else if(strcmp("button.random_noise", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_GENERATE_RANDOM_NOISE)
     {
       add_buffer();
       generate_random_noise(mdata[current_buffer]);
       set_image();
     }
-  else if(strcmp("button.mandelbrot", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_GENERATE_MANDELBROT)
     {
       add_buffer();
       generate_mandelbrot(mdata[current_buffer]);
       set_image();
     }
-  else if(strcmp("button.julia", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_GENERATE_JULIA)
     {
       add_buffer();
       generate_julia(mdata[current_buffer], 0.5, 0.5);
       set_image();
     }
-  else if(strcmp("button.from_clipboard", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_GENERATE_FROM_CLIPBOARD)
     {
       GtkClipboard * clipboard;
       clipboard = gtk_clipboard_get(GDK_SELECTION_CLIPBOARD);
 
       gtk_clipboard_request_image(clipboard, clipboard_callback, NULL);
     }
-  else if(strcmp("button.world_render_item", (char *)data) == 0)
+  else if((size_t)data == ITEM_SIGNAL_WORLD_RENDER_ITEM)
     {
       GtkWidget * dialog = gtk_dialog_new_with_buttons("Render World Map",
 						       GTK_WINDOW(window),
@@ -700,8 +716,12 @@ static void button_click(gpointer data)
 	}
       gtk_widget_destroy(dialog);
     }
+  else if((size_t)data == ITEM_SIGNAL_QUIT)
+    {
+      kill_window(NULL, NULL, NULL);
+    }
   else
-    printf("Unhandeled button press: %s\n", (char *)data);
+    printf("Unhandeled button press: %i\n", (int)(size_t)data);
 }
 
 static void button_click2(GtkWidget * widget, gpointer data)
@@ -749,28 +769,39 @@ GdkPixbuf * create_pixbuf(const gchar * filename)
    return pixbuf;
 }
 
+static void construct_tool_bar_add(GtkWidget * menu, const char * text, size_t signal)
+{
+  GtkWidget * temp_item;
+  temp_item = gtk_menu_item_new_with_label(text);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), temp_item);
+  gtk_widget_show(temp_item);
+  g_signal_connect_swapped(temp_item, "activate",
+			   G_CALLBACK(button_click),
+			   (gpointer)signal);
+}
+
 int main(int argc, char ** argv)
 {
   GtkWidget * vbox;
   GtkWidget * hpaned;
   GtkWidget * sc_win, * sc_buffer;
   GtkWidget * menu_bar;
-  GtkWidget * file_menu, * file_item, * open_item, * save_item, * quit_item, * exp_img_item, * save_raw_data_item, * world_render_item;
-  GtkWidget * generate_menu, * generate_item, * mandelbrot_item, * julia_item, * palette_item, * random_noise_item, * from_clipboard_item;
+  GtkWidget * file_menu, * file_item;
+  GtkWidget * generate_menu, * generate_item;
   GtkWidget * settings_menu, * settings_item;
-	
+  
   GtkWidget * zoom_box, * zoom_button;
-	
+  
   //init general
   colors = (color_t *)malloc(56 * sizeof(color_t));
   memset(mdata, 0, BUFFER_COUNT * sizeof(unsigned char *));
   memset(icons, 0, BUFFER_COUNT * sizeof(GtkWidget *));
   memset(icon_event_boxes, 0, BUFFER_COUNT * sizeof(GtkWidget *));
   mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
-	
+  
   char * templine = malloc(13);
   FILE * fcolors = fopen("colors", "r");
-	
+  
   int i, r, g, b;
   for(i = 0; fgets(templine, 13, fcolors) == templine; i++)
     {
@@ -781,22 +812,22 @@ int main(int argc, char ** argv)
 	
   free(templine);
   fclose(fcolors);
-	
+  
   save_colors(colors, "colors.bin");
   //load_colors(colors, "colors.bin");
-	
+  
   srand(time(NULL));
-	
+  
   config = config_new();
-	
+  
   //init gtk
   gtk_init(&argc, &argv);
-
+  
   //window
   window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(window), "ImageToMap X v" VERSION_NUMBER);
   g_signal_connect(window, "delete_event", G_CALLBACK(kill_window), NULL);
-	
+  
   //vbox
 #ifdef GTK2
   vbox = gtk_vbox_new(FALSE, 0);
@@ -805,112 +836,39 @@ int main(int argc, char ** argv)
 #endif
   gtk_container_add(GTK_CONTAINER (window), vbox);
   gtk_widget_show(vbox);
-	
+  
   //////menu_bar
   menu_bar = gtk_menu_bar_new();
   gtk_box_pack_start(GTK_BOX(vbox), menu_bar, FALSE, TRUE, 0);
   gtk_widget_show(menu_bar);
-	
+  
   ////////file_menu
   file_menu = gtk_menu_new();
-	
-  //////////open_item
-  open_item = gtk_menu_item_new_with_label("Open");
-  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), open_item);
-  gtk_widget_show(open_item);
-  g_signal_connect_swapped (open_item, "activate",
-			    G_CALLBACK (button_click),
-			    (gpointer) "button.open");
-			
-  //////////save_item
-  save_item = gtk_menu_item_new_with_label("Save");
-  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_item);
-  gtk_widget_show(save_item);
-  g_signal_connect_swapped (save_item, "activate",
-			    G_CALLBACK (button_click),
-			    (gpointer) "button.save");
-			
-  //////////save_raw_data_item
-  save_raw_data_item = gtk_menu_item_new_with_label("Save Raw Map");
-  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), save_raw_data_item);
-  gtk_widget_show(save_raw_data_item);
-  g_signal_connect_swapped (save_raw_data_item, "activate",
-			    G_CALLBACK (button_click),
-			    (gpointer) "button.save_rm");
-			
-  //////////exp_img_item
-  exp_img_item = gtk_menu_item_new_with_label("Export Image");
-  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), exp_img_item);
-  gtk_widget_show(exp_img_item);
-  g_signal_connect_swapped(exp_img_item, "activate",
-			   G_CALLBACK (button_click),
-			   (gpointer) "button.exp_img");
   
-  //////////world_render_item
-  world_render_item = gtk_menu_item_new_with_label("Render World");
-  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), world_render_item);
-  gtk_widget_show(world_render_item);
-  g_signal_connect_swapped(world_render_item, "activate",
-			   G_CALLBACK (button_click),
-			   (gpointer) "button.world_render_item");
-	
-  //////////quit_item
-  quit_item = gtk_menu_item_new_with_label("Quit");
-  gtk_menu_shell_append(GTK_MENU_SHELL(file_menu), quit_item);
-  gtk_widget_show(quit_item);
-  g_signal_connect_swapped (quit_item, "activate",
-			    G_CALLBACK(kill_window),
-			    (gpointer)"button.quit");
+  //////////file_menu items
+  construct_tool_bar_add(file_menu, "Open", ITEM_SIGNAL_OPEN);
+  construct_tool_bar_add(file_menu, "Save", ITEM_SIGNAL_SAVE);
+  construct_tool_bar_add(file_menu, "Save Raw Map", ITEM_SIGNAL_SAVE_RM);
+  construct_tool_bar_add(file_menu, "Export Image", ITEM_SIGNAL_EXPORT_IMAGE);
+  construct_tool_bar_add(file_menu, "Render World", ITEM_SIGNAL_WORLD_RENDER_ITEM);
+  construct_tool_bar_add(file_menu, "Quit", ITEM_SIGNAL_QUIT);
 	
   /////////file_item
   file_item = gtk_menu_item_new_with_label("File");
   gtk_widget_show(file_item);
   gtk_menu_item_set_submenu(GTK_MENU_ITEM(file_item), file_menu);
   gtk_menu_shell_append((GtkMenuShell *)menu_bar, file_item);
-	
+  
   ////////generate_menu
   generate_menu = gtk_menu_new();
 	
-  //////////mandelbrot_item
-  mandelbrot_item = gtk_menu_item_new_with_label("Mandelbrot");
-  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), mandelbrot_item);
-  gtk_widget_show(mandelbrot_item);
-  g_signal_connect_swapped(mandelbrot_item, "activate",
-			   G_CALLBACK(button_click),
-			   (gpointer) "button.mandelbrot");
-	
-  //////////julia_item
-  julia_item = gtk_menu_item_new_with_label("Julia");
-  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), julia_item);
-  gtk_widget_show(julia_item);
-  g_signal_connect_swapped(julia_item, "activate",
-			   G_CALLBACK (button_click),
-			   (gpointer) "button.julia");
-	
-  //////////palette_item
-  palette_item = gtk_menu_item_new_with_label("Palette");
-  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), palette_item);
-  gtk_widget_show(palette_item);
-  g_signal_connect_swapped(palette_item, "activate",
-			   G_CALLBACK(button_click),
-			   (gpointer)"button.palette");
-
-  //////////random_noise_item
-  random_noise_item = gtk_menu_item_new_with_label("Random Noise");
-  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), random_noise_item);
-  gtk_widget_show(random_noise_item);
-  g_signal_connect_swapped(random_noise_item, "activate",
-			   G_CALLBACK(button_click),
-			   (gpointer)"button.random_noise");
-
-  //////////from_clipboard_item
-  from_clipboard_item = gtk_menu_item_new_with_label("From Clipboard");
-  gtk_menu_shell_append(GTK_MENU_SHELL(generate_menu), from_clipboard_item);
-  gtk_widget_show(from_clipboard_item);
-  g_signal_connect_swapped(from_clipboard_item, "activate",
-			   G_CALLBACK(button_click),
-			   (gpointer)"button.from_clipboard");
-	
+  //////////generate_menu items
+  construct_tool_bar_add(generate_menu, "Mandelbrot", ITEM_SIGNAL_GENERATE_MANDELBROT);
+  construct_tool_bar_add(generate_menu, "Julia", ITEM_SIGNAL_GENERATE_JULIA);
+  construct_tool_bar_add(generate_menu, "Palette", ITEM_SIGNAL_GENERATE_PALETTE);
+  construct_tool_bar_add(generate_menu, "Random Noise", ITEM_SIGNAL_GENERATE_RANDOM_NOISE);
+   construct_tool_bar_add(generate_menu, "From Clipboard", ITEM_SIGNAL_GENERATE_FROM_CLIPBOARD);
+   
   /////////generate_item
   generate_item = gtk_menu_item_new_with_label("Generate");
   gtk_widget_show(generate_item);
