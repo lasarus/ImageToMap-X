@@ -920,7 +920,13 @@ int main(int argc, char ** argv)
 #else
   list_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #endif
+  
+#if ((GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 7) || (GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION == 7 && GTK_MICRO_VERSION < 8))
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_buffer), list_vbox);
+#else
+  gtk_container_add(GTK_CONTAINER(sc_buffer), list_vbox);
+#endif
+  
   gtk_widget_show(list_vbox);
 
   ////sc_win
@@ -940,7 +946,13 @@ int main(int argc, char ** argv)
   dimage = gdk_pixbuf_new_from_file("start.png", NULL);
   image = gtk_image_new();
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), dimage);
+
+#if ((GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 7) || (GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION == 7 && GTK_MICRO_VERSION < 8))
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_win), image);
+#else
+  gtk_container_add(GTK_CONTAINER(sc_win), image);
+#endif
+  
   gtk_widget_show(image);
 	
   ////zoom_box

@@ -1,8 +1,0 @@
-#!/bin/sh
-name=`basename "$0"`
-tmp="$0"
-tmp=`dirname "$tmp"`
-tmp=`dirname "$tmp"`
-bundle=`dirname "$tmp"`
-cd $bundle/Contents/MacOS
-./ImageToMapX-bin
