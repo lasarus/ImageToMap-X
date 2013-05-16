@@ -3,10 +3,11 @@
 all: linux
 
 clean:
-	+rm -rf bin obj
+	@+$(MAKE) -f linux.mk clean
+	@+$(MAKE) -f windows.mk clean
 
 linux:
-	+$(MAKE) -f linux.mk
+	@+$(MAKE) -f linux.mk
 
 windows:
-	+$(MAKE) -f windows.mk
+	@+$(MAKE) -f windows.mk
