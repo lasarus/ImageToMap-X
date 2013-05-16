@@ -668,7 +668,7 @@ block_info_t * read_region_files(const char * regionpath, const int x, const int
 	      
 	      fseek(regionfile, (ci + cj * 32) * sizeof(uint32_t), SEEK_SET);
 	      
-	      fread(&header, sizeof(uint32_t), 1, regionfile);
+	      if (fread(&header, sizeof(uint32_t), 1, regionfile)) {}
 	      header = ((header >> 24) & 0xFF)
 		| ((header >> 8) & 0xFF00)
 		| ((header << 8) & 0xFF0000)
@@ -681,12 +681,12 @@ block_info_t * read_region_files(const char * regionpath, const int x, const int
 		continue;
 	      
 	      fseek(regionfile, offset * 4096, SEEK_SET);
-	      fread(&lenght, sizeof(uint32_t), 1, regionfile);
+	      if (fread(&lenght, sizeof(uint32_t), 1, regionfile)) {}
 	      lenght = ((lenght >> 24) & 0xFF)
 		| ((lenght >> 8) & 0xFF00)
 		| ((lenght << 8) & 0xFF0000)
 		| ((lenght << 24) & 0xFF000000);
-	      fread(&compression, 1, 1, regionfile);
+	      if (fread(&compression, 1, 1, regionfile)) {}
 	      
 	      lenghtv = lenght;
 	      data = inflatenbt(regionfile, &lenghtv, compression);

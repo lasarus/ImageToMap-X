@@ -87,7 +87,7 @@ block_info_t get_block_info(block_info_t * blocks, int scale, int i, int j)
 unsigned char get_block_id_info(block_info_t * blocks, int scale, int x, int z)
 {
   int majority_array[256];
-  int i, j, k;
+  int i, j, k = 0;
   int rx, rz;
 
   memset(majority_array, 0, 256 * sizeof(int));
@@ -120,7 +120,7 @@ unsigned char get_block_id_info(block_info_t * blocks, int scale, int x, int z)
 int get_block_h_info(block_info_t * blocks, int scale, int x, int z)
 {
   int majority_array[256];
-  int i, j, k;
+  int i, j, k = 0;
   int rx, rz;
   memset(majority_array, 0, 256 * sizeof(int));
 

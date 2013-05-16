@@ -1,15 +1,13 @@
-.PHONY: all clean linux windows mac
+.PHONY: all clean linux windows
 
-all: linux windows mac
+all: linux
 
 clean:
-	+rm -rf bin obj
-	
+	@+$(MAKE) -f linux.mk clean
+	@+$(MAKE) -f windows.mk clean
+
 linux:
-	+$(MAKE) -f linux.mk
+	@+$(MAKE) -f linux.mk
 
 windows:
-	+$(MAKE) -f windows.mk
-
-mac:
-	+$(MAKE) -f mac.mk
+	@+$(MAKE) -f windows.mk
