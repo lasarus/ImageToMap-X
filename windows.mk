@@ -1,6 +1,7 @@
+SHELL := /bin/bash
 CC := i486-mingw32-gcc
 CFLAGS := -Wall -Werror -std=c99 -g -s -Os -mwindows `./pkg-config-script-win --cflags gtk+-2.0` -DGTK2
-LFLAGS := `./pkg-config-script-win --libs gtk+-2.0` -lm -lz -mwindows
+LFLAGS := `./pkg-config-script-win --libs gtk+-2.0` -lm -lz -mwindows -s
 
 WINDRES := i486-mingw32-windres
 
@@ -52,13 +53,13 @@ init:
 $(OBJ)%.o: %.c
 	@$(call BEG, "CC", "$<")
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c $< -o $@ $(ERRORS)
+	@$(CC) -c $< -o $@ $(CFLAGS) $(ERRORS)
 	@$(call END, "CC", "$<")
 
 $(TARGET): $(OBJECTS) $(OBJ)imagetomap.res
 	@$(call BEG, "LD", "$<")
 	@mkdir -p $(dir $@)
-	@$(CC) $(OBJECTS) $(OBJ)imagetomap.res $(LFLAGS) -o $(TARGET) -s $(ERRORS)
+	@$(CC) $(OBJECTS) $(OBJ)imagetomap.res -o $(TARGET) $(LFLAGS) $(ERRORS)
 	@$(call END, "LD", "$<")
 
 $(OBJ)imagetomap.res: imagetomap.rc
@@ -68,4 +69,6 @@ $(OBJ)imagetomap.res: imagetomap.rc
 	@$(call END, "WINDRES", "$<")
 
 clean:
+	@$(call BEGRM, "RM", "$(BIN) $(OBJ)")
 	@$(RM) -rf $(BIN) $(OBJ)
+	@$(call ENDRM, "RM", "$(BIN) $(OBJ)")
