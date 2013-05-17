@@ -1,6 +1,7 @@
+SHELL := /bin/bash
 CC := gcc
 CFLAGS := -Wall -Werror -std=c99 -pedantic -g -s -Os `pkg-config --cflags gtk+-3.0`
-LFLAGS := `pkg-config --libs gtk+-3.0` -lm -lz
+LFLAGS := `pkg-config --libs gtk+-3.0` -lm -lz -s
 
 OBJ := obj/linux/
 BIN := bin/linux/
@@ -46,14 +47,16 @@ init:
 $(OBJ)%.o: %.c
 	@$(call BEG, "CC", "$<")
 	@mkdir -p $(dir $@)
-	@$(CC) $(CFLAGS) -c $< -o $@ $(ERRORS)
+	@$(CC) -c $< -o $@ $(CFLAGS) $(ERRORS)
 	@$(call END, "CC", "$<")
 
 $(TARGET): $(OBJECTS)
 	@$(call BEG, "LD", "$<")
 	@mkdir -p $(dir $@)
-	@$(CC) $(LFLAGS) $(OBJECTS) -o $(TARGET) -s $(ERRORS)
+	@$(CC) $(OBJECTS) -o $(TARGET) $(LFLAGS) $(ERRORS)
 	@$(call END, "LD", "$<")
 
 clean:
+	@$(call BEGRM, "RM", "$(BIN) $(OBJ)")
 	@$(RM) -rf $(BIN) $(OBJ)
+	@$(call ENDRM, "RM", "$(BIN) $(OBJ)")
