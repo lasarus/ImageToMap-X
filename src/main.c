@@ -22,6 +22,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <sys/stat.h>
 
 #include "data_structures.h"
 #include "generate.h"
@@ -50,7 +51,7 @@ enum
     ITEM_SIGNAL_GENERATE_RANDOM_NOISE,
     ITEM_SIGNAL_GENERATE_FROM_CLIPBOARD,
 
-    ITEM_SIGNAL_QUIT,
+    ITEM_SIGNAL_QUIT
   };
 
 void set_image();
@@ -58,10 +59,18 @@ void remove_buffer(int id);
 void update_sidepanel();
 int get_buffer_count();
 void add_buffer();
+void image_load_map(char * path);
+int srecmpend(char * end, char * str);
 
 configvars_t * config = NULL;
 
 static GtkWidget * window;
+
+const static GtkTargetEntry targets[] =
+  {
+    {"text/plain", 0, 0},
+    {"application/x-rootwindows-drop", 0, 0}
+  };
 
 int current_buffer = -1;
 static GdkPixbuf * dimage;
@@ -168,6 +177,78 @@ GdkPixbuf * get_pixbuf_from_data(unsigned char * data, int scale)
   free(tmpdata);
 
   return fdata;
+}
+
+void drag_received(GtkWidget * widget, GdkDragContext * context, gint x, gint y, GtkSelectionData * select_data, guint type_type, guint time, gpointer data)
+{
+  struct stat info;
+  gchar * file = (char *) gtk_selection_data_get_data(select_data);
+  int len;
+  
+  if((strncmp(file, "file:///", 8) != 0) || (strlen(file) > 4096))
+    return;
+
+  gtk_drag_finish(context, TRUE, FALSE, time);
+  
+  file +=(7 * sizeof(char));
+  len = strlen(file) - 1;
+
+  while ((file[len] == ' ') || (file[len] == '\n') || (file[len] == '\r'))
+    {
+      file[len] = '\0';
+      len--;
+    }
+
+  if (stat(file, &info) < 0)
+    return;
+
+  if(srecmpend(".dat", file) == 0)
+    {
+      add_buffer();
+      image_load_map(file);
+    }
+  else if(srecmpend(".bmp", file) == 0 || srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
+    {
+      GError * err = NULL;
+      add_buffer();
+      if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
+	generate_image_dithered(mdata[current_buffer], file, colors, &err);
+      else
+	generate_image(mdata[current_buffer], file, colors, &err);
+      if(err != NULL)
+	{
+	  information("Error while loading image file!");
+	  printf("%s\n", err->message);
+	  g_error_free(err);
+	}
+      set_image();
+    }
+  else if(srecmpend(".imtm", file) == 0)
+    {
+      add_buffer();
+      load_raw_map(file, mdata[current_buffer]);
+      set_image();
+    }
+  else
+    information("File format not supported!");
+  gtk_drag_finish(context, TRUE, TRUE, time);
+}
+
+gboolean drag_motion(GtkWidget * widget, GdkDragContext * context, gint x, gint y, guint time, gpointer user_data)
+{
+  return TRUE;
+}
+
+void drag_leave(GtkWidget * widget, GdkDragContext * context, guint time, gpointer user_data)
+{ 
+}
+
+gboolean drag_drop(GtkWidget * widget, GdkDragContext * context, gint x, gint y, guint time, gpointer user_data)
+{
+  if (gdk_drag_context_list_targets(context))
+      return TRUE;
+  else
+    return FALSE;
 }
 
 int drop_down_menu_id;
@@ -987,6 +1068,14 @@ int main(int argc, char ** argv)
 	
   //icon
   gtk_window_set_icon(GTK_WINDOW(window), create_pixbuf("imagetomap.ico"));
+
+  //Drag and drop
+  gtk_drag_dest_set(window, GTK_DEST_DEFAULT_ALL, targets, sizeof(targets)/sizeof(*targets), GDK_ACTION_COPY);
+  gtk_drag_dest_add_uri_targets(window);
+  g_signal_connect(window, "drag-drop", G_CALLBACK(drag_drop), NULL);
+  g_signal_connect(window, "drag-motion", G_CALLBACK(drag_motion), NULL);
+  g_signal_connect(window, "drag-data-received", G_CALLBACK(drag_received), NULL);
+  g_signal_connect(window, "drag-leave", G_CALLBACK(drag_leave), NULL);
   
   //display window
   gtk_widget_show (window);
