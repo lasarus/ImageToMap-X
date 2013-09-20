@@ -68,8 +68,14 @@ static GtkWidget * window;
 
 const static GtkTargetEntry targets[] =
   {
+    {"text/uri-list", 0, 0},
     {"text/plain", 0, 0},
-    {"application/x-rootwindows-drop", 0, 0}
+    {"text/x-uri", 0, 0},
+    {"text/x-moz-url", 0, 0},
+    {"application/x-rootwindows-drop", 0, 0},
+    {"application/x-bookmark", 0, 0},
+    {"application/x-mswinurl", 0, 0},
+    {"application/x-desktop", 0, 0}
   };
 
 int current_buffer = -1;
@@ -185,12 +191,16 @@ void drag_received(GtkWidget * widget, GdkDragContext * context, gint x, gint y,
   gchar * file = (char *) gtk_selection_data_get_data(select_data);
   int len;
   
-  if((strncmp(file, "file:///", 8) != 0) || (strlen(file) > 4096))
+  if (strncmp(file, "file:///", 8) != 0)
     return;
 
   gtk_drag_finish(context, TRUE, FALSE, time);
   
-  file +=(7 * sizeof(char));
+  file += 7 * sizeof(char);
+#ifndef OS_LINUX
+  file += 1 * sizeof(char);
+#endif
+
   len = strlen(file) - 1;
 
   while ((file[len] == ' ') || (file[len] == '\n') || (file[len] == '\r'))
@@ -240,13 +250,13 @@ gboolean drag_motion(GtkWidget * widget, GdkDragContext * context, gint x, gint 
 }
 
 void drag_leave(GtkWidget * widget, GdkDragContext * context, guint time, gpointer user_data)
-{ 
+{
 }
 
 gboolean drag_drop(GtkWidget * widget, GdkDragContext * context, gint x, gint y, guint time, gpointer user_data)
 {
   if (gdk_drag_context_list_targets(context))
-      return TRUE;
+    return TRUE;
   else
     return FALSE;
 }
