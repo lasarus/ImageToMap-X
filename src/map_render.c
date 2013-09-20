@@ -117,56 +117,98 @@ unsigned char get_block_id_info(block_info_t * blocks, int scale, int x, int z)
   return (unsigned char)k;
 }
 
-int get_block_h_info(block_info_t * blocks, int scale, int x, int z)
+double get_block_h_info(block_info_t * blocks, int scale, int x, int z)
 {
-  int majority_array[256];
-  int i, j, k = 0;
+  int i, j, w;
   int rx, rz;
-  memset(majority_array, 0, 256 * sizeof(int));
+  double h = 0; 
 
-  if(z < 0 || z > pow(2, scale) * 128)
+  w = 1 << scale;
+ 
+  if(z < 0 || z > w * 128)
     return -1;
 
-  rx = pow(2, scale) * x;
-  rz = pow(2, scale) * z;
+  rx = w * x;
+  rz = w * z;
 
-  for(i = 0; i < pow(2, scale); i++)
-      for(j = 0; j < pow(2, scale); j++)
+  for(i = 0; i < w; i++)
+      for(j = 0; j < w; j++)
 	{
 	  block_info_t info = get_block_info(blocks, scale, rx + i, rz + j);
-	  majority_array[info.h]++;
+	  h += (double)(info.h + 1) / (double)(w * w);
 	}
-
-  for((i = 0, j = -1); i < 256; i++)
-    {
-      if(majority_array[i] > j)
-	{
-	  j = majority_array[i];
-	  k = i;
-	}
-    }
   
-  return k;
+  return h;
+}
+
+int get_block_d_info(block_info_t * blocks, int scale, int x, int z)
+{
+  int i, j, w;
+  int rx, rz;
+  int d = 0;
+
+  w = 1 << scale;
+ 
+  if(z < 0 || z > w * 128)
+    return -1;
+
+  rx = w * x;
+  rz = w * z;
+
+  for(i = 0; i < w; i++)
+      for(j = 0; j < w; j++)
+	{
+	  block_info_t info = get_block_info(blocks, scale, rx + i, rz + j);
+	  d += info.d;
+	}
+  d /= w * w;
+  
+  return d;
 }
 
 void render_map(block_info_t * blocks, unsigned char * data, int scale)
 {
-  int i, j;
+  int i, j, w;
+  w = 1 << scale;
+
+  printf("rendering world!\n");
+
   for(i = 0; i < 128; i++)
-    for(j = 0; j < 128; j++)
-      {
-	int baseid;
-	int shadow = 1;
+    {
+      double lasth = 0.0;
+      for(j = 0; j < 128; j++)
+	{
+	  int baseid = 0, id;
+	  int shadow = 1;
+	  double d, h;
+	  h = get_block_h_info(blocks, scale, i, j);
+	  id = get_block_id_info(blocks, scale, i, j);
+	  d = (h - lasth) * 4.0 / (double)(w + 4) + ((double)((i + j) & 1) - 0.5) * 0.4;
+	  
+	  if(d > 0.6)
+	    shadow = 2;
+	  else if(d < -0.6)
+	    shadow = 0;
 
-	if(get_block_h_info(blocks, scale, i, j - 1) >
-	   get_block_h_info(blocks, scale, i, j))
-	  shadow = 0;
-        else if(get_block_h_info(blocks, scale, i, j - 1) <
-	   get_block_h_info(blocks, scale, i, j))
-	   shadow = 2;
-
-	baseid = get_block_baseid(get_block_id_info(blocks, scale, i, j));
+	  if(id > 0)
+	    {
+	      baseid = get_block_baseid(id);
+	      if(baseid == 12 /* water color */)
+		{
+		  int water_depth = get_block_d_info(blocks, scale, i, j);
+		  d = (double)water_depth * 0.1 + (double)((i + j) & 1) * 0.2;
+		  shadow = 1;
+ 
+		  if(d < 0.5)
+		    shadow = 2;
+		  else if(d > 0.9)
+		    shadow = 0;
+		}
+	    }
 	
-	data[i + j * 128] = (baseid * 4) + shadow;
-      }
+	  lasth = h;
+
+	  data[i + j * 128] = (baseid * 4) + shadow;
+	}
+    }
 }

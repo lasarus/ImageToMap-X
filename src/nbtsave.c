@@ -592,12 +592,13 @@ void get_chunk_info(unsigned char ** blocks, int * y, unsigned char * data, int 
     }
 }
 
-void get_chunk_row_info(int * h, int * id, unsigned char ** blocks, int * ylist, int count, int localx, int localz)
+void get_chunk_row_info(int * h, int * id, int * d, unsigned char ** blocks, int * ylist, int count, int localx, int localz)
 {
   int i, j, r = 1, water = 0;
 
   *h = 0;
   *id = 0;
+  *d = 0;
 
   for(i = 0; i < count && r; i++)
     {
@@ -607,6 +608,8 @@ void get_chunk_row_info(int * h, int * id, unsigned char ** blocks, int * ylist,
 	    {
 	      if(!water)
 		*id = blocks[i][j * 16 * 16 + localz * 16 + localx];
+	      else
+		(*d)++;
 	      *h = j + ylist[i] * 16;
 	      if(blocks[i][j * 16 * 16 + localz * 16 + localx] != 8 &&
 		 blocks[i][j * 16 * 16 + localz * 16 + localx] != 9)
@@ -646,6 +649,7 @@ block_info_t * read_region_files(const char * regionpath, const int x, const int
     for(rj = startrz; rj <= endrz; rj++)
       {
         sprintf(pathbuffer, "%s/r.%i.%i.mca", regionpath, ri, rj);
+	printf("%s\n", pathbuffer);
         regionfile = fopen(pathbuffer, "rb");
 	if(regionfile == NULL)
 	    continue;
@@ -701,7 +705,11 @@ block_info_t * read_region_files(const char * regionpath, const int x, const int
 		  nbttag_t tagid = (nbttag_t)data[bufferoffset];
 		  bufferoffset += 1;
 		  if(tagid != NBT_END)
-		    name = nbt_read_raw_string(data, &bufferoffset);
+		    {
+		      name = nbt_read_raw_string(data, &bufferoffset);
+		      printf("name: %s\n", name);
+		    }
+
 		  switch(tagid)
 		    {
 		    case NBT_BYTE:
@@ -783,15 +791,16 @@ block_info_t * read_region_files(const char * regionpath, const int x, const int
 				for(j = 0; j < 16; j++)
 				  {
 				    int globalx, globalz;
-				    int id, bh;
+				    int id, bh, bd;
 				    
 				    globalx = i + ci * 16 + ri * 512;
 				    globalz = j + cj * 16 + rj * 512;
 				    
 				    if((globalx >= x) && (globalx < x + w) && (globalz >= z) && (globalz < z + h))
 				    {
-				      get_chunk_row_info(&bh, &id, blocks, ylist, count, i, j);
+				      get_chunk_row_info(&bh, &id, &bd, blocks, ylist, count, i, j);
 				      rmap[(globalx - x) + (globalz - z) * w].h = bh;
+				      rmap[(globalx - x) + (globalz - z) * w].d = bd;
 				      rmap[(globalx - x) + (globalz - z) * w].blockid = id;
 				    }
 				  }

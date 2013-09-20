@@ -22,6 +22,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <libgen.h>
 
 #include "data_structures.h"
 #include "generate.h"
@@ -39,7 +40,9 @@
 enum
   {
     ITEM_SIGNAL_OPEN,
+    ITEM_SIGNAL_OPEN_GRID_IMAGE,
     ITEM_SIGNAL_SAVE,
+    ITEM_SIGNAL_SAVE_INCREMENT,
     ITEM_SIGNAL_SAVE_RM,
     ITEM_SIGNAL_EXPORT_IMAGE,
     ITEM_SIGNAL_WORLD_RENDER_ITEM,
@@ -77,6 +80,8 @@ map_data_t mdata_info[BUFFER_COUNT];
 GtkWidget * selected_buffer_frame = NULL;
 GtkWidget * icons[BUFFER_COUNT];
 GtkWidget * icon_event_boxes[BUFFER_COUNT];
+
+char last_file[512];
 
 configvars_t * config_new()
 {
@@ -399,9 +404,9 @@ static void clipboard_callback(GtkClipboard * clipboard, GdkPixbuf * pixbuf, gpo
   
   add_buffer();
   if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-    generate_image_dithered_pixbuf(mdata[current_buffer], pixbuf, colors);
+    generate_image_dithered_pixbuf(mdata[current_buffer], 128, 128, pixbuf, colors);
   else
-    generate_image_pixbuf(mdata[current_buffer], pixbuf, colors);
+    generate_image_pixbuf(mdata[current_buffer], 128, 128, pixbuf, colors);
   set_image();
 }
 
@@ -501,9 +506,9 @@ static void button_click(gpointer data)
 	      GError * err = NULL;
 	      add_buffer();
 	      if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-		generate_image_dithered(mdata[current_buffer], file, colors, &err);
+		generate_image_dithered(mdata[current_buffer], 128, 128, file, colors, &err);
 	      else
-		generate_image(mdata[current_buffer], file, colors, &err);
+		generate_image(mdata[current_buffer], 128, 128, file, colors, &err);
 	      if(err != NULL)
 		{
 		  information("Error while loading image file!");
@@ -516,6 +521,90 @@ static void button_click(gpointer data)
 	    {
 	      add_buffer();
 	      load_raw_map(file, mdata[current_buffer]);
+	      set_image();
+	    }
+	  else
+	    information("File format not supported!");
+	}
+      gtk_widget_destroy(dialog);
+    }
+  if((size_t)data == ITEM_SIGNAL_OPEN_GRID_IMAGE)
+    {
+      GtkWidget * dialog;
+      dialog = gtk_file_chooser_dialog_new("Open file",
+					   GTK_WINDOW(window),
+					   GTK_FILE_CHOOSER_ACTION_OPEN,
+					   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+					   GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+					   NULL);
+      
+      if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+	{
+	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+	  
+	  if(srecmpend(".bmp", file) == 0 || srecmpend(".png", file) == 0 || srecmpend(".jpg", file) == 0 || srecmpend(".jpeg", file) == 0 || srecmpend(".gif", file) == 0)
+	    {
+	      GError * err = NULL;
+	      int width = 1, height = 1;
+	      int i, j;
+	      int pi, pj;
+
+	      {
+		GtkWidget * dialog = gtk_dialog_new_with_buttons("Split Image",
+								 GTK_WINDOW(window),
+								 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+								 GTK_STOCK_OK,
+								 GTK_RESPONSE_ACCEPT, NULL);
+
+		GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+		GtkWidget * width_entry = gtk_entry_new();
+		gtk_entry_set_text(GTK_ENTRY(width_entry), "1");
+		gtk_container_add(GTK_CONTAINER(content_area), width_entry);
+
+		GtkWidget * height_entry = gtk_entry_new();
+		gtk_entry_set_text(GTK_ENTRY(height_entry), "1");
+		gtk_container_add(GTK_CONTAINER(content_area), height_entry);
+
+		gtk_widget_show_all(dialog);
+
+		if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+		  {
+		    width = atoi((char *)gtk_entry_get_text(GTK_ENTRY(width_entry)));
+		    height = atoi((char *)gtk_entry_get_text(GTK_ENTRY(height_entry)));
+		  }
+		gtk_widget_destroy(dialog);
+	      }
+	      unsigned char tmp_buffer[width * height * 128 * 128];
+
+	      if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
+		generate_image_dithered(tmp_buffer, width * 128, height * 128, file, colors, &err);
+	      else
+		generate_image(tmp_buffer, width * 128, height * 128, file, colors, &err);
+	      if(err != NULL)
+		{
+		  information("Error while loading image file!");
+		  printf("%s\n", err->message);
+		  g_error_free(err);
+		}
+
+	      for(i = 0; i < width; i++)
+		for(j = 0; j < height; j++)
+		  {
+		    add_buffer();
+
+		    for(pi = 0; pi < 128; pi++)
+		      for(pj = 0; pj < 128; pj++)
+			{
+			  int buffer_i, buffer_j;
+
+			  buffer_i = i * 128 + pi;
+			  buffer_j = j * 128 + pj;
+
+			  mdata[current_buffer][pi + pj * 128] =
+			    tmp_buffer[buffer_i + (width * 128) * buffer_j];
+			}
+		  }
+
 	      set_image();
 	    }
 	  else
@@ -545,10 +634,41 @@ static void button_click(gpointer data)
 	  char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 	  printf("%s\n", file);
 	  if(srecmpend(".dat", file) == 0)
-	    save_map(file);
+	    {
+	      save_map(file);
+	      sprintf(last_file, "%s", file);
+	    }
 	}
       gtk_widget_destroy(dialog);
       printf("bracket cleared\n");
+    }
+  else if((size_t)data == ITEM_SIGNAL_SAVE_INCREMENT)
+    {
+      int i = 0;
+      char * tmp = last_file;
+      char * basename_s, * dirname_s;
+      if(mdata[current_buffer] == NULL)
+	return;
+
+      basename_s = basename(tmp);
+      dirname_s = dirname(tmp);
+
+      tmp = basename_s;
+
+      if(strncmp("map_", tmp, 4) == 0)
+	{
+	  tmp += 4;
+	  i = strtol(tmp, &tmp, 10) + 1;
+
+	  if(strcmp(".dat", tmp) == 0)
+	    {
+	      sprintf(last_file, "%s/map_%i.dat", dirname_s, i);
+
+	      save_map(last_file);
+
+	      /* save_map(last_file); */
+	    }
+	}
     }
   else if((size_t)data == ITEM_SIGNAL_EXPORT_IMAGE)
     {
@@ -847,7 +967,9 @@ int main(int argc, char ** argv)
   
   //////////file_menu items
   construct_tool_bar_add(file_menu, "Open", ITEM_SIGNAL_OPEN);
+  construct_tool_bar_add(file_menu, "Open Grid Image", ITEM_SIGNAL_OPEN_GRID_IMAGE);
   construct_tool_bar_add(file_menu, "Save", ITEM_SIGNAL_SAVE);
+  construct_tool_bar_add(file_menu, "Save Increment", ITEM_SIGNAL_SAVE_INCREMENT);
   construct_tool_bar_add(file_menu, "Save Raw Map", ITEM_SIGNAL_SAVE_RM);
   construct_tool_bar_add(file_menu, "Export Image", ITEM_SIGNAL_EXPORT_IMAGE);
   construct_tool_bar_add(file_menu, "Render World", ITEM_SIGNAL_WORLD_RENDER_ITEM);

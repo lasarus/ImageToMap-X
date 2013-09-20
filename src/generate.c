@@ -7,7 +7,7 @@
    ImageToMapX is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+n   GNU General Public License for more details.
    You should have received a copy of the GNU General Public License
    along with ImageToMapX. If not, see <http://www.gnu.org/licenses/>. */
 
@@ -197,19 +197,19 @@ int nclosest_color(int r, int g, int b, color_t * colors)
   return closest_id;
 }
 
-color_t * scale_image(GdkPixbuf * image)
+color_t * scale_image(GdkPixbuf * image, int bw, int bh)
 {
   double x, y;
   int i;
   double h = gdk_pixbuf_get_height(image), w = gdk_pixbuf_get_width(image);
-  double xi = w / 128., yi = h / 128.;
-  color_t * scaled_image = malloc(128 * 128 * sizeof(color_t));
+  double xi = w / (double)bw, yi = h / (double)bh;
+  color_t * scaled_image = malloc(bw * bh * sizeof(color_t));
   unsigned char * image_pixels = gdk_pixbuf_get_pixels(image);
 
-  for(i = 0; i < 128 * 128; i++)
+  for(i = 0; i < bw * bh; i++)
     {
-      x = (double)(i % 128) * xi;
-      y = (double)(i / 128) * yi;
+      x = (double)(i % bw) * xi;
+      y = (double)(i / bw) * yi;
 
       color_t c = get_pixel_pixbuf(x, y, image, image_pixels, NULL);
 
@@ -219,20 +219,19 @@ color_t * scale_image(GdkPixbuf * image)
   return scaled_image;
 }
 
-void generate_image_pixbuf(unsigned char * data, GdkPixbuf * image, color_t * colors)
+void generate_image_pixbuf(unsigned char * data, int bw, int bh, GdkPixbuf * image, color_t * colors)
 {
   double h = gdk_pixbuf_get_height(image), w = gdk_pixbuf_get_width(image);
-  double xi = w / 128., yi = h / 128.;
+  double xi = w / (double)bw, yi = h / (double)bh;
 
   unsigned char * image_pixels = gdk_pixbuf_get_pixels(image);
-
   double x, y;
 
   int i = 0, alpha;
-  for(i = 0; i < 128 * 128; i++)
+  for(i = 0; i < bw * bh; i++)
     {
-      x = (double)(i % 128) * xi;
-      y = (double)(i / 128) * yi;
+      x = (double)(i % bw) * xi;
+      y = (double)(i / bw) * yi;
 
       color_t c = get_pixel_pixbuf(x, y, image, image_pixels, &alpha);
       
@@ -243,14 +242,14 @@ void generate_image_pixbuf(unsigned char * data, GdkPixbuf * image, color_t * co
     }
 }
 
-void generate_image(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+void generate_image(unsigned char * data, int w, int h, const char * filename, color_t * colors, GError ** error)
 {
   GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
 
   if(*error != NULL)
     return;
 
-  generate_image_pixbuf(data, image, colors);
+  generate_image_pixbuf(data, w, h, image, colors);
 
   g_object_unref(image);
 }
@@ -265,16 +264,17 @@ void add_without_overflow(unsigned char * i, int j)
     *i = 0;
 }
 
-void generate_image_dithered_pixbuf(unsigned char * data, GdkPixbuf * image, color_t * colors)
+void generate_image_dithered_pixbuf(unsigned char * data, int w, int h, GdkPixbuf * image, color_t * colors)
 {
-  color_t * image_scaled = scale_image(image);
+  color_t * image_scaled = scale_image(image, w, h);
 
   int x, y, i;
 
-  for(x = 0; x < 128; x++)
-    for(y = 0; y < 128; y++)
+  printf("dither!\n");
+  for(x = 0; x < w; x++)
+    for(y = 0; y < h; y++)
       {
-	i = x + y * 128;
+	i = x + y * w;
 	double re, ge, be;
 
 	color_t c = image_scaled[i];
@@ -284,31 +284,31 @@ void generate_image_dithered_pixbuf(unsigned char * data, GdkPixbuf * image, col
 	ge = (c.g - qc.g) / 16.;
 	be = (c.b - qc.b) / 16.;
 	
-	if(x != 127)
+	if(x != w - 1)
 	  {
 	    add_without_overflow(&(image_scaled[i + 1].r), (int)(re * 7));
 	    add_without_overflow(&(image_scaled[i + 1].g), (int)(ge * 7));
 	    add_without_overflow(&(image_scaled[i + 1].b), (int)(be * 7));
 	  }
 
-	if(y != 127)
+	if(y != w - 1)
 	  {
 	    if(x != 0)
 	      {
-		add_without_overflow(&(image_scaled[i + 127].r), (int)(re * 3));
-		add_without_overflow(&(image_scaled[i + 127].g), (int)(ge * 3));
-		add_without_overflow(&(image_scaled[i + 127].b), (int)(be * 3));
+		add_without_overflow(&(image_scaled[i + w - 1].r), (int)(re * 3));
+		add_without_overflow(&(image_scaled[i + w - 1].g), (int)(ge * 3));
+		add_without_overflow(&(image_scaled[i + w - 1].b), (int)(be * 3));
 	      }
 
-	    add_without_overflow(&(image_scaled[i + 128].r), (int)(re * 5));
-	    add_without_overflow(&(image_scaled[i + 128].g), (int)(ge * 5));
-	    add_without_overflow(&(image_scaled[i + 128].b), (int)(be * 5));
+	    add_without_overflow(&(image_scaled[i + w].r), (int)(re * 5));
+	    add_without_overflow(&(image_scaled[i + w].g), (int)(ge * 5));
+	    add_without_overflow(&(image_scaled[i + w].b), (int)(be * 5));
 
-	    if(x != 127)
+	    if(x != w - 1)
 	      {
-		add_without_overflow(&(image_scaled[i + 128].r), (int)(re * 1));
-		add_without_overflow(&(image_scaled[i + 128].g), (int)(ge * 1));
-		add_without_overflow(&(image_scaled[i + 128].b), (int)(be * 1));
+		add_without_overflow(&(image_scaled[i + w].r), (int)(re * 1));
+		add_without_overflow(&(image_scaled[i + w].g), (int)(ge * 1));
+		add_without_overflow(&(image_scaled[i + w].b), (int)(be * 1));
 	      }
 	  }
       }
@@ -316,14 +316,14 @@ void generate_image_dithered_pixbuf(unsigned char * data, GdkPixbuf * image, col
   free(image_scaled);
 }
 
-void generate_image_dithered(unsigned char * data, const char * filename, color_t * colors, GError ** error)
+void generate_image_dithered(unsigned char * data, int w, int h, const char * filename, color_t * colors, GError ** error)
 {
   GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
 
   if(*error != NULL)
     return;
 
-  generate_image_dithered_pixbuf(data, image, colors);
+  generate_image_dithered_pixbuf(data, w, h, image, colors);
   g_object_unref(image);
 }
 
