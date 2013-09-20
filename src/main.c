@@ -22,11 +22,8 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-<<<<<<< HEAD
 #include <libgen.h>
-=======
 #include <sys/stat.h>
->>>>>>> 2c6194d8332b53ea5a7372cc9dc4c24e140b5b82
 
 #include "data_structures.h"
 #include "generate.h"
@@ -230,9 +227,9 @@ void drag_received(GtkWidget * widget, GdkDragContext * context, gint x, gint y,
       GError * err = NULL;
       add_buffer();
       if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-	generate_image_dithered(mdata[current_buffer], file, colors, &err);
+	generate_image_dithered(mdata[current_buffer], 128, 128, file, colors, &err);
       else
-	generate_image(mdata[current_buffer], file, colors, &err);
+	generate_image(mdata[current_buffer], 128, 128, file, colors, &err);
       if(err != NULL)
 	{
 	  information("Error while loading image file!");
