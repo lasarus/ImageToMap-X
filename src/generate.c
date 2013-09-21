@@ -291,7 +291,7 @@ void generate_image_dithered_pixbuf(unsigned char * data, int w, int h, GdkPixbu
 	    add_without_overflow(&(image_scaled[i + 1].b), (int)(be * 7));
 	  }
 
-	if(y != w - 1)
+	if(y != h - 1)
 	  {
 	    if(x != 0)
 	      {
