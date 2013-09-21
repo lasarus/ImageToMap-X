@@ -47,6 +47,7 @@ enum
     ITEM_SIGNAL_SAVE_RM,
     ITEM_SIGNAL_EXPORT_IMAGE,
     ITEM_SIGNAL_WORLD_RENDER_ITEM,
+    ITEM_SIGNAL_CLEAN,
 
     ITEM_SIGNAL_GENERATE_MANDELBROT,
     ITEM_SIGNAL_GENERATE_JULIA,
@@ -648,13 +649,31 @@ static void button_click(gpointer data)
 								 GTK_RESPONSE_ACCEPT, NULL);
 
 		GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+		GtkWidget * hbox;
+		GtkWidget * label;
+#ifdef GTK2
+		hbox = gtk_hbox_new(FALSE, 0);
+#else
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+#endif
+		label = gtk_label_new("width");
 		GtkWidget * width_entry = gtk_entry_new();
 		gtk_entry_set_text(GTK_ENTRY(width_entry), "1");
-		gtk_container_add(GTK_CONTAINER(content_area), width_entry);
+		gtk_container_add(GTK_CONTAINER(hbox), width_entry);
+		gtk_container_add(GTK_CONTAINER(hbox), label);
+		gtk_container_add(GTK_CONTAINER(content_area), hbox);
 
+#ifdef GTK2
+		hbox = gtk_hbox_new(FALSE, 0);
+#else
+		hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+#endif
+		label = gtk_label_new("height");
 		GtkWidget * height_entry = gtk_entry_new();
 		gtk_entry_set_text(GTK_ENTRY(height_entry), "1");
-		gtk_container_add(GTK_CONTAINER(content_area), height_entry);
+		gtk_container_add(GTK_CONTAINER(hbox), height_entry);
+		gtk_container_add(GTK_CONTAINER(hbox), label);
+		gtk_container_add(GTK_CONTAINER(content_area), hbox);
 
 		gtk_widget_show_all(dialog);
 
@@ -927,6 +946,14 @@ static void button_click(gpointer data)
 	}
       gtk_widget_destroy(dialog);
     }
+  else if((size_t)data == ITEM_SIGNAL_CLEAN)
+    {
+      while(mdata[1] != NULL)
+	{
+	  remove_buffer(0);
+	}
+      /* set_image(); */
+    }
   else if((size_t)data == ITEM_SIGNAL_QUIT)
     {
       kill_window(NULL, NULL, NULL);
@@ -1064,6 +1091,7 @@ int main(int argc, char ** argv)
   construct_tool_bar_add(file_menu, "Save Raw Map", ITEM_SIGNAL_SAVE_RM);
   construct_tool_bar_add(file_menu, "Export Image", ITEM_SIGNAL_EXPORT_IMAGE);
   construct_tool_bar_add(file_menu, "Render World", ITEM_SIGNAL_WORLD_RENDER_ITEM);
+  construct_tool_bar_add(file_menu, "Clean Buffer List", ITEM_SIGNAL_CLEAN);
   construct_tool_bar_add(file_menu, "Quit", ITEM_SIGNAL_QUIT);
 	
   /////////file_item

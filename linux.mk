@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CC := gcc
-CFLAGS := -Wall -Werror -std=c99 -pedantic -g -s -Os `pkg-config --cflags gtk+-3.0`
+CFLAGS := -Wall -Werror -std=c99 -pedantic -g -s -Os `pkg-config --cflags gtk+-3.0` -DOS_LINUX
 LFLAGS := `pkg-config --libs gtk+-3.0` -lm -lz -s
 
 OBJ := obj/linux/
