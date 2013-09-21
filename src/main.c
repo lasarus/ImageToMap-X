@@ -20,10 +20,16 @@
 #include <errno.h>
 #include <gtk/gtk.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <math.h>
 #include <libgen.h>
 #include <sys/stat.h>
+
+#ifndef OS_LINUX
+//I feel bad about doing this, but I couldn't find a better solution //WildN00b
+int __cdecl __MINGW_NOTHROW strcasecmp (const char *, const char *);
+#endif
 
 #include "data_structures.h"
 #include "generate.h"
@@ -530,7 +536,7 @@ int srecmpend(char * end, char * str)
   
   str += slen - elen;
   
-  return strcmp(end, str);
+  return strcasecmp(end, str);
 }
 
 int get_buffer_count()
