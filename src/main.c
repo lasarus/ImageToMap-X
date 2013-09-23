@@ -88,6 +88,7 @@ static GtkWidget * image;
 static GtkWidget * list_vbox;
 
 static GtkWidget * FSD_checkbox;
+static GtkWidget * YUV_checkbox;
 
 color_t * colors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
@@ -228,9 +229,9 @@ void drag_received(GtkWidget * widget, GdkDragContext * context, gint x, gint y,
       GError * err = NULL;
       add_buffer();
       if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-	generate_image_dithered(mdata[current_buffer], 128, 128, file, colors, &err);
+	generate_image_dithered(mdata[current_buffer], 128, 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), file, colors, &err);
       else
-	generate_image(mdata[current_buffer], 128, 128, file, colors, &err);
+	generate_image(mdata[current_buffer], 128, 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), file, colors, &err);
       if(err != NULL)
 	{
 	  information("Error while loading image file!");
@@ -496,9 +497,9 @@ static void clipboard_callback(GtkClipboard * clipboard, GdkPixbuf * pixbuf, gpo
   
   add_buffer();
   if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-    generate_image_dithered_pixbuf(mdata[current_buffer], 128, 128, pixbuf, colors);
+    generate_image_dithered_pixbuf(mdata[current_buffer], 128, 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), pixbuf, colors);
   else
-    generate_image_pixbuf(mdata[current_buffer], 128, 128, pixbuf, colors);
+    generate_image_pixbuf(mdata[current_buffer], 128, 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), pixbuf, colors);
   set_image();
 }
 
@@ -598,9 +599,9 @@ static void button_click(gpointer data)
 	      GError * err = NULL;
 	      add_buffer();
 	      if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-		generate_image_dithered(mdata[current_buffer], 128, 128, file, colors, &err);
+		generate_image_dithered(mdata[current_buffer], 128, 128,gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)),  file, colors, &err);
 	      else
-		generate_image(mdata[current_buffer], 128, 128, file, colors, &err);
+		generate_image(mdata[current_buffer], 128, 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), file, colors, &err);
 	      if(err != NULL)
 		{
 		  information("Error while loading image file!");
@@ -651,6 +652,7 @@ static void button_click(gpointer data)
 		GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
 		GtkWidget * hbox;
 		GtkWidget * label;
+
 #ifdef GTK2
 		hbox = gtk_hbox_new(FALSE, 0);
 #else
@@ -687,9 +689,9 @@ static void button_click(gpointer data)
 	      unsigned char tmp_buffer[width * height * 128 * 128];
 
 	      if(gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(FSD_checkbox)))
-		generate_image_dithered(tmp_buffer, width * 128, height * 128, file, colors, &err);
+		generate_image_dithered(tmp_buffer, width * 128, height * 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), file, colors, &err);
 	      else
-		generate_image(tmp_buffer, width * 128, height * 128, file, colors, &err);
+		generate_image(tmp_buffer, width * 128, height * 128, gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(YUV_checkbox)), file, colors, &err);
 	      if(err != NULL)
 		{
 		  information("Error while loading image file!");
@@ -1072,6 +1074,7 @@ int main(int argc, char ** argv)
 #else
   vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #endif
+  gtk_frame_set_shadow_type(GTK_FRAME(vbox), GTK_SHADOW_IN);
   gtk_container_add(GTK_CONTAINER (window), vbox);
   gtk_widget_show(vbox);
   
@@ -1129,6 +1132,11 @@ int main(int argc, char ** argv)
   FSD_checkbox = gtk_check_menu_item_new_with_label("Floyd–Steinberg dithering");
   gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), FSD_checkbox);
   gtk_widget_show(FSD_checkbox);
+
+  //////////YUV_checkbox
+  YUV_checkbox = gtk_check_menu_item_new_with_label("YUV color conversion");
+  gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), YUV_checkbox);
+  gtk_widget_show(YUV_checkbox);
   
   //drop_down_menu
   init_drop_down_menu();
@@ -1162,7 +1170,7 @@ int main(int argc, char ** argv)
   list_vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 #endif
   
-#if ((GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 7) || (GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION == 7 && GTK_MICRO_VERSION < 8))
+#ifdef GTK2
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_buffer), list_vbox);
 #else
   gtk_container_add(GTK_CONTAINER(sc_buffer), list_vbox);
@@ -1188,7 +1196,7 @@ int main(int argc, char ** argv)
   image = gtk_image_new();
   gtk_image_set_from_pixbuf(GTK_IMAGE(image), dimage);
 
-#if ((GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION < 7) || (GTK_MAJOR_VERSION == 3 && GTK_MINOR_VERSION == 7 && GTK_MICRO_VERSION < 8))
+#ifdef GTK2
   gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(sc_win), image);
 #else
   gtk_container_add(GTK_CONTAINER(sc_win), image);

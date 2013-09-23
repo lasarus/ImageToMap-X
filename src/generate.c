@@ -153,7 +153,58 @@ color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char *
   return color;
 }
 
-int closest_color(int r, int g, int b, color_t * colors)
+/* Transformation Matrix: */
+/* Y   |0.299    0.587    0.114  ||R|*/
+/* U = |-0.14713 -0.28886 0.436  ||G|*/
+/* V   |0.615    -0.51499 -0.0001||B|*/
+void RGB_to_YUV(int ri, int gi, int bi, float * y, float * u, float * v)
+{
+  float r, g, b;
+  r = ri / 255.;
+  g = gi / 255.;
+  b = bi / 255.;
+  *y = r * 0.299 + g * 0.587 + b * 0.114;
+  *u = r * -0.14713 + g* -0.28886 + b * 0.436;
+  *v = r * 0.615 + g * -0.51499 + b * -0.0001;
+}
+
+
+double YUV_to_dist(float y1, float u1, float v1, float y2, float u2, float v2)
+{
+  float yd, ud, vd;
+  yd = y1 - y2;
+  ud = u1 - u2;
+  vd = v1 - v2;
+
+  return sqrt(yd * yd + ud * ud + vd * vd);
+}
+
+int closest_color_YUV(int r, int g, int b, color_t * colors)
+{
+  int i, closest_id = 0;
+  double closest_dist = 0xFFFFFFFF, ndist;
+  float y, u, v;
+  RGB_to_YUV(r, g, b, &y, &u, &v);
+
+  for(i = 4; i < 56; i++)
+    {
+      double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
+      float testy, testu, testv;
+      RGB_to_YUV(testr, testg, testb, &testy, &testu, &testv);
+
+      ndist = YUV_to_dist(y, u, v, testy, testu, testv);
+
+      if(ndist < closest_dist)
+	{
+	  closest_id = i;
+	  closest_dist = ndist;
+	}
+    }
+
+  return closest_id;
+}
+
+int closest_color_RGB(int r, int g, int b, color_t * colors)
 {
   int i, closest_id = 0;
   double closest_dist = 0xFFFFFFFF, ndist;
@@ -174,28 +225,36 @@ int closest_color(int r, int g, int b, color_t * colors)
   return closest_id;
 }
 
-int nclosest_color(int r, int g, int b, color_t * colors)
+int closest_color(int r, int g, int b, color_t * colors, int yuv)
 {
-  int i, closest_id = 0, rc = closest_color(r, g, b, colors);
-  double closest_dist = 0xFFFFFFFF, ndist;
-  for(i = 4; i < 56; i++)
-    {
-      if(i == rc)
-	continue;
-      double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
-      ndist = sqrt(pow(testr - r, 2)
-		   + pow(testg - g, 2)
-		   + pow(testb - b, 2));
-
-      if(ndist < closest_dist)
-	{
-	  closest_id = i;
-	  closest_dist = ndist;
-	}
-    }
-
-  return closest_id;
+  if(yuv == 0)
+    return closest_color_RGB(r, g, b, colors);
+  else
+    return closest_color_YUV(r, g, b, colors);
 }
+
+/* int nclosest_color(int r, int g, int b, color_t * colors) */
+/* { */
+/*   int i, closest_id = 0, rc = closest_color(r, g, b, colors); */
+/*   double closest_dist = 0xFFFFFFFF, ndist; */
+/*   for(i = 4; i < 56; i++) */
+/*     { */
+/*       if(i == rc) */
+/* 	continue; */
+/*       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b; */
+/*       ndist = sqrt(pow(testr - r, 2) */
+/* 		   + pow(testg - g, 2) */
+/* 		   + pow(testb - b, 2)); */
+
+/*       if(ndist < closest_dist) */
+/* 	{ */
+/* 	  closest_id = i; */
+/* 	  closest_dist = ndist; */
+/* 	} */
+/*     } */
+
+/*   return closest_id; */
+/* } */
 
 color_t * scale_image(GdkPixbuf * image, int bw, int bh)
 {
@@ -219,7 +278,7 @@ color_t * scale_image(GdkPixbuf * image, int bw, int bh)
   return scaled_image;
 }
 
-void generate_image_pixbuf(unsigned char * data, int bw, int bh, GdkPixbuf * image, color_t * colors)
+void generate_image_pixbuf(unsigned char * data, int bw, int bh, int yuv, GdkPixbuf * image, color_t * colors)
 {
   double h = gdk_pixbuf_get_height(image), w = gdk_pixbuf_get_width(image);
   double xi = w / (double)bw, yi = h / (double)bh;
@@ -238,18 +297,18 @@ void generate_image_pixbuf(unsigned char * data, int bw, int bh, GdkPixbuf * ima
       if(alpha)
 	data[i] = 0;
       else
-	data[i] = closest_color(c.r, c.g, c.b, colors);
+	data[i] = closest_color(c.r, c.g, c.b, colors, yuv);
     }
 }
 
-void generate_image(unsigned char * data, int w, int h, const char * filename, color_t * colors, GError ** error)
+void generate_image(unsigned char * data, int w, int h, int yuv, const char * filename, color_t * colors, GError ** error)
 {
   GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
 
   if(*error != NULL)
     return;
 
-  generate_image_pixbuf(data, w, h, image, colors);
+  generate_image_pixbuf(data, w, h, yuv, image, colors);
 
   g_object_unref(image);
 }
@@ -264,7 +323,7 @@ void add_without_overflow(unsigned char * i, int j)
     *i = 0;
 }
 
-void generate_image_dithered_pixbuf(unsigned char * data, int w, int h, GdkPixbuf * image, color_t * colors)
+void generate_image_dithered_pixbuf(unsigned char * data, int w, int h, int yuv, GdkPixbuf * image, color_t * colors)
 {
   color_t * image_scaled = scale_image(image, w, h);
 
@@ -278,7 +337,7 @@ void generate_image_dithered_pixbuf(unsigned char * data, int w, int h, GdkPixbu
 	double re, ge, be;
 
 	color_t c = image_scaled[i];
-	data[i] = closest_color(c.r, c.g, c.b, colors);
+	data[i] = closest_color(c.r, c.g, c.b, colors, yuv);
 	color_t qc = colors[data[i]];
 	re = (c.r - qc.r) / 16.;
 	ge = (c.g - qc.g) / 16.;
@@ -316,14 +375,14 @@ void generate_image_dithered_pixbuf(unsigned char * data, int w, int h, GdkPixbu
   free(image_scaled);
 }
 
-void generate_image_dithered(unsigned char * data, int w, int h, const char * filename, color_t * colors, GError ** error)
+void generate_image_dithered(unsigned char * data, int w, int h, int yuv, const char * filename, color_t * colors, GError ** error)
 {
   GdkPixbuf * image = gdk_pixbuf_new_from_file(filename, error);
 
   if(*error != NULL)
     return;
 
-  generate_image_dithered_pixbuf(data, w, h, image, colors);
+  generate_image_dithered_pixbuf(data, w, h, yuv, image, colors);
   g_object_unref(image);
 }
 
