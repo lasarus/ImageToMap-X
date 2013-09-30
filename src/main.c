@@ -563,7 +563,6 @@ void add_buffer()
   mdata_info[current_buffer].dimension = 0;
 }
 
-
 void remove_buffer(int id)
 {
   if(get_buffer_count() == 1)
@@ -577,6 +576,24 @@ void remove_buffer(int id)
   memmove(&(mdata_info[id]), &(mdata_info[id + 1]), (BUFFER_COUNT - id - 2) * sizeof(map_data_t));
   memset(&(mdata_info[BUFFER_COUNT - 1]), 0, sizeof(map_data_t));
   set_image();
+}
+
+char * custom_basename(char * path)
+{
+  char * tmp = path;
+  
+  while(*tmp != 0) tmp++;
+
+  while(tmp != path)
+    {
+      tmp--;
+      if(*tmp == '\\' || *tmp == '/')
+	{
+	  *tmp = 0;
+	  return tmp + 1;
+	}
+    }
+  return NULL;
 }
 
 static void button_click(gpointer data)
@@ -768,23 +785,29 @@ static void button_click(gpointer data)
       if(mdata[current_buffer] == NULL)
 	return;
 
-      basename_s = basename(tmp);
-      dirname_s = dirname(tmp);
-
-      tmp = basename_s;
-
-      if(strncmp("map_", tmp, 4) == 0)
+      basename_s = custom_basename(tmp);
+      dirname_s = last_file;
+      if(basename_s != NULL)
 	{
-	  tmp += 4;
-	  i = strtol(tmp, &tmp, 10) + 1;
+	  tmp = basename_s;
 
-	  if(strcmp(".dat", tmp) == 0)
+	  if(strncmp("map_", tmp, 4) == 0)
 	    {
-	      sprintf(last_file, "%s/map_%i.dat", dirname_s, i);
+	      tmp += 4;
+	      i = strtol(tmp, &tmp, 10) + 1;
 
-	      save_map(last_file);
+	      if(strcmp(".dat", tmp) == 0)
+		{
+#ifdef OS_LINUX
+		  sprintf(last_file, "%s/map_%i.dat", dirname_s, i);
+#else
+		  sprintf(last_file, "%s\\map_%i.dat", dirname_s, i);
+#endif
 
-	      /* save_map(last_file); */
+		  save_map(last_file);
+
+		  /* save_map(last_file); */
+		}
 	    }
 	}
     }
@@ -1026,6 +1049,19 @@ static void construct_tool_bar_add(GtkWidget * menu, const char * text, size_t s
 			   (gpointer)signal);
 }
 
+static void construct_tool_bar_add_deactivate(GtkWidget * menu, const char * text, size_t signal)
+{
+  GtkWidget * temp_item;
+  temp_item = gtk_menu_item_new_with_label(text);
+  gtk_menu_shell_append(GTK_MENU_SHELL(menu), temp_item);
+  gtk_widget_show(temp_item);
+  g_signal_connect_swapped(temp_item, "activate",
+			   G_CALLBACK(button_click),
+			   (gpointer)signal);
+
+  gtk_widget_set_sensitive(temp_item, 0);
+}
+
 int main(int argc, char ** argv)
 {
   GtkWidget * vbox;
@@ -1099,6 +1135,7 @@ int main(int argc, char ** argv)
   construct_tool_bar_add(file_menu, "Save Increment", ITEM_SIGNAL_SAVE_INCREMENT);
   construct_tool_bar_add(file_menu, "Save Raw Map", ITEM_SIGNAL_SAVE_RM);
   construct_tool_bar_add(file_menu, "Export Image", ITEM_SIGNAL_EXPORT_IMAGE);
+  /* construct_tool_bar_add_deactivate(file_menu, "Render World", ITEM_SIGNAL_WORLD_RENDER_ITEM); */
   construct_tool_bar_add(file_menu, "Render World", ITEM_SIGNAL_WORLD_RENDER_ITEM);
   construct_tool_bar_add(file_menu, "Clean Buffer List", ITEM_SIGNAL_CLEAN);
   construct_tool_bar_add(file_menu, "Quit", ITEM_SIGNAL_QUIT);
