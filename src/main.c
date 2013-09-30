@@ -1049,7 +1049,7 @@ static void construct_tool_bar_add(GtkWidget * menu, const char * text, size_t s
 			   (gpointer)signal);
 }
 
-static void construct_tool_bar_add_deactivate(GtkWidget * menu, const char * text, size_t signal)
+void construct_tool_bar_add_deactivate(GtkWidget * menu, const char * text, size_t signal)
 {
   GtkWidget * temp_item;
   temp_item = gtk_menu_item_new_with_label(text);
