@@ -25,7 +25,7 @@ void generate_palette(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = ((i) % 52) + 4;
+      data[i] = ((i) % (NUM_COLORS - 4)) + 4;
     }
 }
 
@@ -35,7 +35,7 @@ void generate_random_noise(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = (rand() % 52) + 4;
+      data[i] = (rand() % (NUM_COLORS - 4)) + 4;
     }
 }
 
