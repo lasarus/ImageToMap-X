@@ -7,7 +7,7 @@
    ImageToMapX is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-n   GNU General Public License for more details.
+   GNU General Public License for more details.
    You should have received a copy of the GNU General Public License
    along with ImageToMapX. If not, see <http://www.gnu.org/licenses/>. */
 
@@ -25,7 +25,7 @@ void generate_palette(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = ((i) % 52) + 4;
+      data[i] = ((i) % 140) + 4;
     }
 }
 
@@ -35,7 +35,7 @@ void generate_random_noise(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = (rand() % 52) + 4;
+      data[i] = (rand() % (COLOR_COUNT - 4)) + 4;
     }
 }
 
@@ -186,7 +186,7 @@ int closest_color_YUV(int r, int g, int b, color_t * colors)
   float y, u, v;
   RGB_to_YUV(r, g, b, &y, &u, &v);
 
-  for(i = 4; i < 56; i++)
+  for(i = 4; i < COLOR_COUNT; i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       float testy, testu, testv;
@@ -208,7 +208,7 @@ int closest_color_RGB(int r, int g, int b, color_t * colors)
 {
   int i, closest_id = 0;
   double closest_dist = 0xFFFFFFFF, ndist;
-  for(i = 4; i < 56; i++)
+  for(i = 4; i < COLOR_COUNT; i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       ndist = sqrt(pow(testr - r, 2)

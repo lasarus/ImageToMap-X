@@ -1,6 +1,8 @@
 #ifndef COLOR_H
 #define COLOR_H
 
+#define COLOR_COUNT 144
+
 typedef struct color
 {
   unsigned char r, g, b;
@@ -17,8 +19,8 @@ typedef struct configvars
 {
   GdkInterpType interp;
   double zooms;
-  double stdzoom;
-	
+  double stdzoom;	
+
   int maxzoom;
   int minzoom;
 } configvars_t;
