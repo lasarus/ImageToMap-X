@@ -445,14 +445,20 @@ void update_sidepanel()
 	{
 	  if(i == current_buffer)
 	    {
-	      GdkRGBA color;
-	      
-	      gdk_rgba_parse(&color, "red");
-	      
 	      if(selected_buffer_frame != NULL)
 		gtk_widget_destroy(selected_buffer_frame);
 	      selected_buffer_frame = gtk_frame_new(NULL);
+#ifdef GTK2
+	      GdkColor color;
+
+	      gdk_color_parse("red", &color);
+	      gtk_widget_modify_bg(selected_buffer_frame, GTK_STATE_NORMAL, &color);
+#else
+	      GdkRGBA color;
+	      
+	      gdk_rgba_parse(&color, "red");
 	      gtk_widget_override_background_color(selected_buffer_frame, GTK_STATE_NORMAL, &color);
+#endif
 	      gtk_box_pack_start(GTK_BOX(list_vbox), selected_buffer_frame, FALSE, TRUE, 1);
 	      
 	      icons[i] = gtk_image_new();
