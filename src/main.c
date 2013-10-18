@@ -19,6 +19,8 @@
 #include <assert.h>
 #include <errno.h>
 #include <gtk/gtk.h>
+#include <glib.h>
+#include <glib/gi18n.h>
 #include <string.h>
 #include <strings.h>
 #include <time.h>
@@ -320,9 +322,9 @@ static void drop_down_menu_callback(gpointer data)
       GtkWidget * dialog = gtk_dialog_new_with_buttons("Edit Map Data",
 						       GTK_WINDOW(window),
 						       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-						       GTK_STOCK_OK,
+						       _("_OK"),
 						       GTK_RESPONSE_ACCEPT,
-						       GTK_STOCK_CANCEL,
+						       _("_Cancel"),
 						       GTK_RESPONSE_REJECT, NULL);
 
 
@@ -443,21 +445,21 @@ void update_sidepanel()
 	{
 	  if(i == current_buffer)
 	    {
-	      GdkColor color;
+	      GdkRGBA color;
 	      
-	      gdk_color_parse("red", &color);
+	      gdk_rgba_parse(&color, "red");
 	      
 	      if(selected_buffer_frame != NULL)
 		gtk_widget_destroy(selected_buffer_frame);
 	      selected_buffer_frame = gtk_frame_new(NULL);
-	      gtk_widget_modify_bg(selected_buffer_frame, GTK_STATE_NORMAL, &color);
+	      gtk_widget_override_background_color(selected_buffer_frame, GTK_STATE_NORMAL, &color);
 	      gtk_box_pack_start(GTK_BOX(list_vbox), selected_buffer_frame, FALSE, TRUE, 1);
 	      
 	      icons[i] = gtk_image_new();
 	      icon_event_boxes[i] = gtk_event_box_new();
 	      
 	      gtk_image_set_from_pixbuf(GTK_IMAGE(icons[i]), get_pixbuf_from_data(mdata[i], 0));
-	      
+
 	      gtk_container_add(GTK_CONTAINER(selected_buffer_frame), icon_event_boxes[i]);
 	      gtk_container_add(GTK_CONTAINER(icon_event_boxes[i]), icons[i]);
 	      
@@ -604,8 +606,8 @@ static void button_click(gpointer data)
       dialog = gtk_file_chooser_dialog_new("Open file",
 					   GTK_WINDOW(window),
 					   GTK_FILE_CHOOSER_ACTION_OPEN,
-					   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					   GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+					   _("_Cancel"), GTK_RESPONSE_CANCEL,
+					   _("_Open"), GTK_RESPONSE_ACCEPT,
 					   NULL);
       
       if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
@@ -650,8 +652,8 @@ static void button_click(gpointer data)
       dialog = gtk_file_chooser_dialog_new("Open file",
 					   GTK_WINDOW(window),
 					   GTK_FILE_CHOOSER_ACTION_OPEN,
-					   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					   GTK_STOCK_OPEN, GTK_RESPONSE_ACCEPT,
+					   _("_Cancel"), GTK_RESPONSE_CANCEL,
+					   _("_Open"), GTK_RESPONSE_ACCEPT,
 					   NULL);
       
       if(gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
@@ -669,7 +671,7 @@ static void button_click(gpointer data)
 		GtkWidget * dialog = gtk_dialog_new_with_buttons("Split Image",
 								 GTK_WINDOW(window),
 								 GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-								 GTK_STOCK_OK,
+								 _("_OK"),
 								 GTK_RESPONSE_ACCEPT, NULL);
 
 		GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
@@ -757,8 +759,8 @@ static void button_click(gpointer data)
       dialog = gtk_file_chooser_dialog_new ("Save Map",
 					    GTK_WINDOW(window),
 					    GTK_FILE_CHOOSER_ACTION_SAVE,
-					    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					    GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+					    _("_Cancel"), GTK_RESPONSE_CANCEL,
+					    _("_Save"), GTK_RESPONSE_ACCEPT,
 					    NULL);
       
       gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
@@ -821,8 +823,8 @@ static void button_click(gpointer data)
       dialog = gtk_file_chooser_dialog_new ("Export Image of Map",
 					    GTK_WINDOW(window),
 					    GTK_FILE_CHOOSER_ACTION_SAVE,
-					    GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					    GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+					    _("_Cancel"), GTK_RESPONSE_CANCEL,
+					    _("_Save"), GTK_RESPONSE_ACCEPT,
 					    NULL);
       
       gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
@@ -881,8 +883,8 @@ static void button_click(gpointer data)
       dialog = gtk_file_chooser_dialog_new("Save Map",
 					   GTK_WINDOW(window),
 					   GTK_FILE_CHOOSER_ACTION_SAVE,
-					   GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-					   GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
+					   _("_Cancel"), GTK_RESPONSE_CANCEL,
+					   _("_Save"), GTK_RESPONSE_ACCEPT,
 					   NULL);
       
       gtk_file_chooser_set_do_overwrite_confirmation(GTK_FILE_CHOOSER (dialog), TRUE);
@@ -932,9 +934,9 @@ static void button_click(gpointer data)
       GtkWidget * dialog = gtk_dialog_new_with_buttons("Render World Map",
 						       GTK_WINDOW(window),
 						       GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-						       GTK_STOCK_OK,
+						       _("_OK"),
 						       GTK_RESPONSE_ACCEPT,
-						       GTK_STOCK_CANCEL,
+						       _("_Cancel"),
 						       GTK_RESPONSE_REJECT, NULL);
 
       GtkWidget * content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
