@@ -1,6 +1,8 @@
 #ifndef COLOR_H
 #define COLOR_H
 
+#define NUM_COLORS 144
+
 typedef struct color
 {
   unsigned char r, g, b;

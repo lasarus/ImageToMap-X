@@ -84,7 +84,7 @@ void generate_mandelbrot(unsigned char * data)
 	    }
 	  else
 	    {
-	      data[x + y * 128] = (unsigned char)((n % (56 - 4)) + 4);
+	      data[x + y * 128] = (unsigned char)((n % (NUM_COLORS - 4)) + 4);
 	    }
 	}
     }
@@ -131,7 +131,7 @@ void generate_julia(unsigned char * data, double c_im, double c_re)
 	    }
 	  else
 	    {
-	      data[x + y * 128] = (unsigned char)((n % (56 - 4)) + 4);
+	      data[x + y * 128] = (unsigned char)((n % (NUM_COLORS - 4)) + 4);
 	    }
 	}
     }
@@ -186,7 +186,7 @@ int closest_color_YUV(int r, int g, int b, color_t * colors)
   float y, u, v;
   RGB_to_YUV(r, g, b, &y, &u, &v);
 
-  for(i = 4; i < 56; i++)
+  for(i = 4; i < NUM_COLORS; i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       float testy, testu, testv;
@@ -208,7 +208,7 @@ int closest_color_RGB(int r, int g, int b, color_t * colors)
 {
   int i, closest_id = 0;
   double closest_dist = 0xFFFFFFFF, ndist;
-  for(i = 4; i < 56; i++)
+  for(i = 4; i < NUM_COLORS; i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       ndist = sqrt(pow(testr - r, 2)
@@ -237,7 +237,7 @@ int closest_color(int r, int g, int b, color_t * colors, int yuv)
 /* { */
 /*   int i, closest_id = 0, rc = closest_color(r, g, b, colors); */
 /*   double closest_dist = 0xFFFFFFFF, ndist; */
-/*   for(i = 4; i < 56; i++) */
+/*   for(i = 4; i < NUM_COLORS; i++) */
 /*     { */
 /*       if(i == rc) */
 /* 	continue; */
