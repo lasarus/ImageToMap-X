@@ -1,7 +1,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#define COLOR_COUNT 144
+#define NUM_COLORS 144
 
 typedef struct color
 {

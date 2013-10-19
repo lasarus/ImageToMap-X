@@ -530,11 +530,11 @@ void load_raw_map(const char * filename, unsigned char * mapdata)
 void save_colors(color_t * colors, char * filename)
 {
   FILE * dest = fopen(filename, "wb");
-  deflatenbt((unsigned char *)colors, 56 * sizeof(color_t), dest, 9);
+  deflatenbt((unsigned char *)colors, NUM_COLORS * sizeof(color_t), dest, 9);
   fclose(dest);
   /*FILE * dest = fopen(filename, "wb");
     int i = 0;
-    for(i = 0; i < 56; i++)
+    for(i = 0; i < NUM_COLORS; i++)
     {
     fwrite(&(colors[i]), sizeof(color_t), 1, dest);
     }
@@ -546,8 +546,8 @@ void load_colors(color_t * colors, char * filename)
   FILE * source = fopen(filename, "rb");
   long size = -1;
   unsigned char * tbuffer = inflatenbt(source, &size, 1);
-  if(size == 56 * sizeof(color_t))
-    memcpy(colors, tbuffer, 56 * sizeof(color_t));
+  if(size == NUM_COLORS * sizeof(color_t))
+    memcpy(colors, tbuffer, NUM_COLORS * sizeof(color_t));
   free(tbuffer);
   fclose(source);
 }

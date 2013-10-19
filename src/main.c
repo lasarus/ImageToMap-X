@@ -1083,7 +1083,7 @@ int main(int argc, char ** argv)
   GtkWidget * zoom_box, * zoom_button;
   
   //init general
-  colors = (color_t *)malloc(COLOR_COUNT * sizeof(color_t));
+  colors = (color_t *)malloc(NUM_COLORS * sizeof(color_t));
   memset(mdata, 0, BUFFER_COUNT * sizeof(unsigned char *));
   memset(icons, 0, BUFFER_COUNT * sizeof(GtkWidget *));
   memset(icon_event_boxes, 0, BUFFER_COUNT * sizeof(GtkWidget *));
