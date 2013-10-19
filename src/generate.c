@@ -25,7 +25,7 @@ void generate_palette(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = ((i) % 140) + 4;
+      data[i] = ((i) % (NUM_COLORS - 4)) + 4;
     }
 }
 
@@ -35,7 +35,7 @@ void generate_random_noise(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = (rand() % (COLOR_COUNT - 4)) + 4;
+      data[i] = (rand() % (NUM_COLORS - 4)) + 4;
     }
 }
 
@@ -84,7 +84,7 @@ void generate_mandelbrot(unsigned char * data)
 	    }
 	  else
 	    {
-	      data[x + y * 128] = (unsigned char)((n % (56 - 4)) + 4);
+	      data[x + y * 128] = (unsigned char)((n % (NUM_COLORS - 4)) + 4);
 	    }
 	}
     }
@@ -131,7 +131,7 @@ void generate_julia(unsigned char * data, double c_im, double c_re)
 	    }
 	  else
 	    {
-	      data[x + y * 128] = (unsigned char)((n % (56 - 4)) + 4);
+	      data[x + y * 128] = (unsigned char)((n % (NUM_COLORS - 4)) + 4);
 	    }
 	}
     }
@@ -186,7 +186,7 @@ int closest_color_YUV(int r, int g, int b, color_t * colors)
   float y, u, v;
   RGB_to_YUV(r, g, b, &y, &u, &v);
 
-  for(i = 4; i < COLOR_COUNT; i++)
+  for(i = 4; i < NUM_COLORS; i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       float testy, testu, testv;
@@ -208,7 +208,7 @@ int closest_color_RGB(int r, int g, int b, color_t * colors)
 {
   int i, closest_id = 0;
   double closest_dist = 0xFFFFFFFF, ndist;
-  for(i = 4; i < COLOR_COUNT; i++)
+  for(i = 4; i < NUM_COLORS; i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       ndist = sqrt(pow(testr - r, 2)
@@ -232,29 +232,6 @@ int closest_color(int r, int g, int b, color_t * colors, int yuv)
   else
     return closest_color_YUV(r, g, b, colors);
 }
-
-/* int nclosest_color(int r, int g, int b, color_t * colors) */
-/* { */
-/*   int i, closest_id = 0, rc = closest_color(r, g, b, colors); */
-/*   double closest_dist = 0xFFFFFFFF, ndist; */
-/*   for(i = 4; i < 56; i++) */
-/*     { */
-/*       if(i == rc) */
-/* 	continue; */
-/*       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b; */
-/*       ndist = sqrt(pow(testr - r, 2) */
-/* 		   + pow(testg - g, 2) */
-/* 		   + pow(testb - b, 2)); */
-
-/*       if(ndist < closest_dist) */
-/* 	{ */
-/* 	  closest_id = i; */
-/* 	  closest_dist = ndist; */
-/* 	} */
-/*     } */
-
-/*   return closest_id; */
-/* } */
 
 color_t * scale_image(GdkPixbuf * image, int bw, int bh)
 {
