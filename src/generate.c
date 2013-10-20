@@ -155,9 +155,9 @@ color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char *
   if(alpha != NULL)
     {
       if(n_channels == 4)
-	*alpha = 0;
-      else
 	*alpha = (p[3] == 0);
+      else
+	*alpha = 0;
     }
 
   return color;
