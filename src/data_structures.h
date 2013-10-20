@@ -2,6 +2,7 @@
 #define COLOR_H
 
 #define NUM_COLORS 144
+#define OLD_NUM_COLORS 56
 
 typedef struct color
 {

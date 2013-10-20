@@ -97,8 +97,12 @@ static GtkWidget * list_vbox;
 
 static GtkWidget * FSD_checkbox;
 static GtkWidget * YUV_checkbox;
+static GtkWidget * old_colors_checkbox;
+int old_colors = 0;
 
 color_t * colors = NULL;
+color_t * oldcolors = NULL;
+color_t * newcolors = NULL;
 unsigned char * mdata[BUFFER_COUNT];
 map_data_t mdata_info[BUFFER_COUNT];
 
@@ -604,6 +608,16 @@ char * custom_basename(char * path)
   return NULL;
 }
 
+static void old_colors_checkbox_toggle(gpointer data)
+{
+  old_colors = gtk_check_menu_item_get_active(GTK_CHECK_MENU_ITEM(old_colors_checkbox));
+  if(old_colors)
+    colors = oldcolors;
+  else
+    colors = newcolors;
+  set_image();
+}
+
 static void button_click(gpointer data)
 {
   if((size_t)data == ITEM_SIGNAL_OPEN)
@@ -1070,6 +1084,24 @@ void construct_tool_bar_add_deactivate(GtkWidget * menu, const char * text, size
   gtk_widget_set_sensitive(temp_item, 0);
 }
 
+void load_colors_plain(color_t * colors, const char * path)
+{
+  FILE * fcolors;
+  int i, r, g, b;
+  char * templine;
+
+  templine = malloc(13);
+  fcolors = fopen(path, "r");
+  for(i = 0; fgets(templine, 13, fcolors) == templine; i++)
+    {
+      sscanf(templine, "%i,%i,%i", &r, &g, &b);
+      color_t color = {r, g, b};
+      colors[i] = color;
+    }
+  free(templine);
+  fclose(fcolors);
+}
+
 int main(int argc, char ** argv)
 {
   GtkWidget * vbox;
@@ -1081,29 +1113,21 @@ int main(int argc, char ** argv)
   GtkWidget * settings_menu, * settings_item;
   
   GtkWidget * zoom_box, * zoom_button;
-  
+  int i;
+
   //init general
   colors = (color_t *)malloc(NUM_COLORS * sizeof(color_t));
+  oldcolors = (color_t *)malloc(OLD_NUM_COLORS * sizeof(color_t));
   memset(mdata, 0, BUFFER_COUNT * sizeof(unsigned char *));
   memset(icons, 0, BUFFER_COUNT * sizeof(GtkWidget *));
   memset(icon_event_boxes, 0, BUFFER_COUNT * sizeof(GtkWidget *));
   mdata[current_buffer] = (unsigned char *)malloc(128 * 128);
   
-  char * templine = malloc(13);
-  FILE * fcolors = fopen("colors", "r");
+  load_colors_plain(colors, "colors");
+  load_colors_plain(oldcolors, "oldcolors");
+  newcolors = colors;
   
-  int i, r, g, b;
-  for(i = 0; fgets(templine, 13, fcolors) == templine; i++)
-    {
-      sscanf(templine, "%i,%i,%i", &r, &g, &b);
-      color_t color = {r, g, b};
-      colors[i] = color;
-    }
-	
-  free(templine);
-  fclose(fcolors);
-  
-  save_colors(colors, "colors.bin");
+  //save_colors(colors, "colors.bin");
   //load_colors(colors, "colors.bin");
   
   srand(time(NULL));
@@ -1188,7 +1212,14 @@ int main(int argc, char ** argv)
   YUV_checkbox = gtk_check_menu_item_new_with_label("YUV color conversion");
   gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), YUV_checkbox);
   gtk_widget_show(YUV_checkbox);
-  
+
+  //////////old_colors_checkbox
+  old_colors_checkbox = gtk_check_menu_item_new_with_label("Old Colors");
+  gtk_menu_shell_append(GTK_MENU_SHELL(settings_menu), old_colors_checkbox);
+  gtk_widget_show(old_colors_checkbox);
+  g_signal_connect_swapped(old_colors_checkbox, "toggled",
+			   G_CALLBACK(old_colors_checkbox_toggle), 0);
+
   //drop_down_menu
   init_drop_down_menu();
 

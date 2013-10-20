@@ -20,12 +20,14 @@
 #include "data_structures.h"
 #include "generate.h"
 
+extern int old_colors;
+
 void generate_palette(unsigned char * data)
 {
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = ((i) % (NUM_COLORS - 4)) + 4;
+      data[i] = (i % (((old_colors) ? OLD_NUM_COLORS : NUM_COLORS) - 4)) + 4;
     }
 }
 
@@ -35,7 +37,7 @@ void generate_random_noise(unsigned char * data)
   int i;
   for(i = 0; i < 128 * 128; i++)
     {
-      data[i] = (rand() % (NUM_COLORS - 4)) + 4;
+      data[i] = (rand() % (((old_colors) ? OLD_NUM_COLORS : NUM_COLORS) - 4)) + 4;
     }
 }
 
@@ -84,7 +86,7 @@ void generate_mandelbrot(unsigned char * data)
 	    }
 	  else
 	    {
-	      data[x + y * 128] = (unsigned char)((n % (NUM_COLORS - 4)) + 4);
+	      data[x + y * 128] = (unsigned char)((n % (((old_colors) ? OLD_NUM_COLORS : NUM_COLORS) - 4)) + 4);
 	    }
 	}
     }
@@ -131,7 +133,7 @@ void generate_julia(unsigned char * data, double c_im, double c_re)
 	    }
 	  else
 	    {
-	      data[x + y * 128] = (unsigned char)((n % (NUM_COLORS - 4)) + 4);
+	      data[x + y * 128] = (unsigned char)((n % (((old_colors) ? OLD_NUM_COLORS : NUM_COLORS) - 4)) + 4);
 	    }
 	}
     }
@@ -194,7 +196,7 @@ int closest_color_YUV(int r, int g, int b, color_t * colors)
   float y, u, v;
   RGB_to_YUV(r, g, b, &y, &u, &v);
 
-  for(i = 4; i < NUM_COLORS; i++)
+  for(i = 4; i < ((old_colors) ? OLD_NUM_COLORS : NUM_COLORS); i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       float testy, testu, testv;
@@ -216,7 +218,7 @@ int closest_color_RGB(int r, int g, int b, color_t * colors)
 {
   int i, closest_id = 0;
   double closest_dist = 0xFFFFFFFF, ndist;
-  for(i = 4; i < NUM_COLORS; i++)
+  for(i = 4; i < ((old_colors) ? OLD_NUM_COLORS : NUM_COLORS); i++)
     {
       double testr = colors[i].r, testg = colors[i].g, testb = colors[i].b;
       ndist = sqrt(pow(testr - r, 2)
