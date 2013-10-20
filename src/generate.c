@@ -141,14 +141,22 @@ color_t get_pixel_pixbuf(double x, double y, GdkPixbuf * pixbuf, unsigned char *
 {
   color_t color;
   guchar * p;
+  int n_channels;
   p = pixels + ((int)y) * gdk_pixbuf_get_rowstride(pixbuf) + ((int)x) * gdk_pixbuf_get_n_channels(pixbuf);
 
   color.r = p[0];
   color.g = p[1];
   color.b = p[2];
 
+  n_channels = gdk_pixbuf_get_n_channels(pixbuf);
+
   if(alpha != NULL)
-    *alpha = (p[3] == 0);
+    {
+      if(n_channels == 4)
+	*alpha = 0;
+      else
+	*alpha = (p[3] == 0);
+    }
 
   return color;
 }
