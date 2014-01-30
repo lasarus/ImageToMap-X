@@ -52,6 +52,7 @@ enum
     ITEM_SIGNAL_OPEN_GRID_IMAGE,
     ITEM_SIGNAL_SAVE,
     ITEM_SIGNAL_SAVE_INCREMENT,
+    ITEM_SIGNAL_SAVE_ALL,
     ITEM_SIGNAL_SAVE_RM,
     ITEM_SIGNAL_EXPORT_IMAGE,
     ITEM_SIGNAL_WORLD_RENDER_ITEM,
@@ -833,6 +834,72 @@ static void button_click(gpointer data)
 	    }
 	}
     }
+  else if((size_t)data == ITEM_SIGNAL_SAVE_ALL)
+    {
+      int old_current_buffer = current_buffer;
+      GtkWidget * dialog;
+
+      int i = 0;
+      char * tmp;
+      char * basename_s, * dirname_s;
+
+      /* Gets first file name */
+      dialog = gtk_file_chooser_dialog_new ("Save Map",
+					    GTK_WINDOW(window),
+					    GTK_FILE_CHOOSER_ACTION_SAVE,
+					    _("_Cancel"), GTK_RESPONSE_CANCEL,
+					    _("_Save"), GTK_RESPONSE_ACCEPT,
+					    NULL);
+
+      gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
+      gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), "map_0.dat");
+
+      if(gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT)
+	return;
+
+      char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+      if(srecmpend(".dat", file) != 0)
+	return;
+      sprintf(last_file, "%s", file);
+      gtk_widget_destroy(dialog);
+
+      /* Gets the directory and the file name */
+
+      basename_s = custom_basename(last_file);
+      dirname_s = malloc(strlen(last_file)+8); /* 8 is a magic number! Naa jk, it is just to make sure we don't overflow */
+      if (dirname_s == NULL)
+	return;
+      strcpy(dirname_s, last_file);
+      memset(dirname_s+(strlen(dirname_s)-strlen(basename_s)), strlen(basename_s), '\0');
+
+      if(basename_s == NULL)
+	return;
+
+      tmp = basename_s;
+
+      /* Gets the number in the file name, 10 for 'map_10.dat' */
+      if(strncmp("map_", tmp, 4) != 0)
+	return;
+
+      tmp += 4;
+      i = strtol(tmp, &tmp, 10);
+
+      /* Saves all the buffers */
+      for (current_buffer = 0; current_buffer < BUFFER_COUNT; current_buffer++) {
+	if(mdata[current_buffer] == NULL)
+	  break;
+#ifdef OS_LINUX
+	sprintf(last_file, "%s/map_%i.dat", dirname_s, i);
+#else
+	sprintf(last_file, "%s\\map_%i.dat", dirname_s, i);
+#endif
+	save_map(last_file);
+	i++;
+      }
+      /* Restores the selection to the right buffer and frees the allocated memory */
+      current_buffer = old_current_buffer;
+      free(dirname_s);
+    }
   else if((size_t)data == ITEM_SIGNAL_EXPORT_IMAGE)
     {
       if(mdata[current_buffer] == NULL)
@@ -1165,6 +1232,7 @@ int main(int argc, char ** argv)
   construct_tool_bar_add(file_menu, "Open Grid Image", ITEM_SIGNAL_OPEN_GRID_IMAGE);
   construct_tool_bar_add(file_menu, "Save", ITEM_SIGNAL_SAVE);
   construct_tool_bar_add(file_menu, "Save Increment", ITEM_SIGNAL_SAVE_INCREMENT);
+  construct_tool_bar_add(file_menu, "Save All", ITEM_SIGNAL_SAVE_ALL);
   construct_tool_bar_add(file_menu, "Save Raw Map", ITEM_SIGNAL_SAVE_RM);
   construct_tool_bar_add(file_menu, "Export Image", ITEM_SIGNAL_EXPORT_IMAGE);
   /* construct_tool_bar_add_deactivate(file_menu, "Render World", ITEM_SIGNAL_WORLD_RENDER_ITEM); */
