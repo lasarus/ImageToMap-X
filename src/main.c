@@ -854,12 +854,16 @@ static void button_click(gpointer data)
       gtk_file_chooser_set_do_overwrite_confirmation (GTK_FILE_CHOOSER (dialog), TRUE);
       gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER (dialog), "map_0.dat");
 
-      if(gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT)
+      if(gtk_dialog_run(GTK_DIALOG(dialog)) != GTK_RESPONSE_ACCEPT) {
+	gtk_widget_destroy(dialog);
 	return;
+      }
 
       char * file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-      if(srecmpend(".dat", file) != 0)
+      if(srecmpend(".dat", file) != 0) {
+	gtk_widget_destroy(dialog);
 	return;
+      }
       sprintf(last_file, "%s", file);
       gtk_widget_destroy(dialog);
 
