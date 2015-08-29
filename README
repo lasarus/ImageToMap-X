@@ -12,3 +12,11 @@ build with:
 # make <platform>
 
 The binaries are located in "bin/<platform>/".
+
+# Mac Build
+
+Install dependencies through [Homebrew](http://brew.sh) using the following command:
+
+```
+brew install gtk pkg-config
+```
