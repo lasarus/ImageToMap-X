@@ -32,3 +32,8 @@ $(OBJ)%.o: %.c
 $(TARGET): $(OBJECTS)
 	@mkdir -p $(BIN)
 	$(CC) $(OBJECTS) $(LFLAGS) -o $(TARGET)
+
+clean:
+	@$(call BEGRM, "RM", "$(BIN) $(OBJ)")
+	@$(RM) -rf $(BIN) $(OBJ)
+	@$(call ENDRM, "RM", "$(BIN) $(OBJ)")
