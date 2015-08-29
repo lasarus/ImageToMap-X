@@ -40,7 +40,9 @@ int __cdecl __MINGW_NOTHROW strcasecmp (const char *, const char *);
 
 #ifdef OS_LINUX
 #define MINECRAFT_PATH "/home/<user>/.minecraft/saves/<world name>/region"
-#else
+#elif OS_MAC
+#define MINECRAFT_PATH "/User/<user>/Library/Application Support/minecraft/saves/<world name>/region"
+#else // Windows
 #define MINECRAFT_PATH "<path to .minecraft>/.minecraft/saves/<world name>/region"
 #endif
 
