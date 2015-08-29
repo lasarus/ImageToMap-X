@@ -28,7 +28,7 @@
 #include <libgen.h>
 #include <sys/stat.h>
 
-#ifndef OS_LINUX
+#ifdef OS_WINDOWS
 //I feel bad about doing this, but I couldn't find a better solution //WildN00b
 int __cdecl __MINGW_NOTHROW strcasecmp (const char *, const char *);
 #endif
