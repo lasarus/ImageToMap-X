@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CC := i486-mingw32-gcc
-CFLAGS := -Wall -Werror -std=c99 -g -s -Os -mwindows `./pkg-config-script-win --cflags gtk+-2.0` -DGTK2
+CFLAGS := -Wall -Werror -std=c99 -g -s -Os -mwindows `./pkg-config-script-win --cflags gtk+-2.0` -DGTK2 -DOS_WINDOWS
 LFLAGS := `./pkg-config-script-win --libs gtk+-2.0` -lm -lz -mwindows -s
 
 WINDRES := i486-mingw32-windres

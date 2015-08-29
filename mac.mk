@@ -1,5 +1,5 @@
 CC := gcc
-CFLAGS := -Wall -Werror -std=c99 -g -Os `./pkg-config-script-mac --cflags gtk+-2.0` -DGTK2
+CFLAGS := -Wall -Werror -std=c99 -g -Os `./pkg-config-script-mac --cflags gtk+-2.0` -DGTK2 -DOS_MAC
 LFLAGS := `./pkg-config-script-mac --libs gtk+-2.0` -lm -lz
 
 OBJ := obj/mac/
