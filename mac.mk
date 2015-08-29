@@ -19,7 +19,6 @@ all: $(TARGET)
 	mkdir -p $(APP){MacOS,Resources}
 	cp mac/ImageToMapX $(APP)MacOS/ImageToMapX
 	cp $(TARGET) $(APP)MacOS/ImageToMapX-bin
-	cp mac/dylib/* $(APP)MacOS/
 	cp -r resources/* $(APP)MacOS/
 	cp mac/Info.plist mac/PkgInfo $(APP)
 	cp mac/ImageToMapX.icns $(APP)Resources/
